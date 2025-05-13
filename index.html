@@ -1,60 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Взломщик шифра Виженера</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Декодер шифра Виженера</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            line-height: 1.6;
-        }
-        .container {
-            background: #f9f9f9;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background-color: #f9f9f9;
         }
         h1 {
             color: #2c3e50;
             text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            min-height: 100px;
-            margin-bottom: 10px;
-            font-family: monospace;
+            font-size: 16px;
+            margin-bottom: 15px;
+            min-height: 150px;
+            resize: vertical;
         }
         button {
             background: #3498db;
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 12px 20px;
+            font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
             width: 100%;
-            margin-bottom: 20px;
+            transition: background 0.3s;
         }
         button:hover {
             background: #2980b9;
         }
-        .result-box {
-            background: #fff;
-            border: 1px solid #ddd;
+        .result-area {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f0f8ff;
             border-radius: 4px;
-            padding: 15px;
-            margin-top: 20px;
+            border-left: 4px solid #3498db;
         }
         .settings {
-            background: #ecf0f1;
+            margin: 20px 0;
             padding: 15px;
+            background: #f5f5f5;
             border-radius: 4px;
-            margin-bottom: 20px;
         }
         .error {
             color: #e74c3c;
@@ -63,180 +69,263 @@
         .success {
             color: #27ae60;
         }
+        .key-candidate {
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔓 Взломщик шифра Виженера</h1>
+        <h1>🔍 Декодер шифра Виженера</h1>
         
         <div class="settings">
             <h3>Настройки анализа:</h3>
-            <div>
-                <label>
-                    <input type="checkbox" id="removeSpaces" checked> Удалять пробелы
-                </label>
-            </div>
-            <div>
-                <label>
-                    <input type="checkbox" id="removePunctuation" checked> Удалять знаки препинания
-                </label>
-            </div>
-            <div>
-                <label>
-                    Макс. длина ключа: 
-                    <input type="number" id="maxKeyLength" value="15" min="1" max="30">
-                </label>
-            </div>
+            <p>Максимальная длина ключа: <span id="keyLengthValue">15</span></p>
+            <input type="range" id="keyLength" min="1" max="30" value="15" oninput="document.getElementById('keyLengthValue').textContent = this.value">
         </div>
-        
+
         <textarea id="ciphertext" placeholder="Введите зашифрованный текст...">OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR</textarea>
         
-        <button onclick="startCracking()">ВЗЛОМАТЬ ШИФР</button>
+        <button onclick="decode()">Анализировать и декодировать</button>
         
-        <div class="result-box">
+        <div class="result-area">
             <h3>Результаты анализа:</h3>
-            <div id="status">Готов к работе...</div>
-            <div id="results"></div>
+            <div id="status">Готов к работе</div>
+            <div id="result"></div>
+            <div id="candidates"></div>
         </div>
     </div>
 
     <script>
-        // Частотность букв английского языка
+        // Частотность букв в английском языке (проценты)
         const englishFreq = {
-            'A': 8.2, 'B': 1.5, 'C': 2.8, 'D': 4.3, 'E': 12.7,
-            'F': 2.2, 'G': 2.0, 'H': 6.1, 'I': 7.0, 'J': 0.2,
-            'K': 0.8, 'L': 4.0, 'M': 2.4, 'N': 6.7, 'O': 7.5,
-            'P': 1.9, 'Q': 0.1, 'R': 6.0, 'S': 6.3, 'T': 9.1,
-            'U': 2.8, 'V': 1.0, 'W': 2.4, 'X': 0.2, 'Y': 2.0,
-            'Z': 0.1
+            'A': 8.167, 'B': 1.492, 'C': 2.782, 'D': 4.253, 'E': 12.702,
+            'F': 2.228, 'G': 2.015, 'H': 6.094, 'I': 6.966, 'J': 0.153,
+            'K': 0.772, 'L': 4.025, 'M': 2.406, 'N': 6.749, 'O': 7.507,
+            'P': 1.929, 'Q': 0.095, 'R': 5.987, 'S': 6.327, 'T': 9.056,
+            'U': 2.758, 'V': 0.978, 'W': 2.360, 'X': 0.150, 'Y': 1.974,
+            'Z': 0.074
         };
 
-        function startCracking() {
-            const ciphertext = document.getElementById("ciphertext").value;
-            const removeSpaces = document.getElementById("removeSpaces").checked;
-            const removePunctuation = document.getElementById("removePunctuation").checked;
-            const maxKeyLength = parseInt(document.getElementById("maxKeyLength").value);
+        // Самые частые биграммы в английском
+        const commonBigrams = [
+            'TH', 'HE', 'IN', 'ER', 'AN', 'RE', 'ON', 'AT',
+            'EN', 'ND', 'TI', 'ES', 'OR', 'TE', 'OF', 'ED'
+        ];
+
+        // Самые частые слова в английском
+        const commonWords = [
+            'THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL',
+            'ANY', 'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'OUT', 'GET',
+            'HIS', 'HAS', 'WHO', 'ITS', 'HAD', 'HOW', 'SHE', 'THEY'
+        ];
+
+        function decode() {
+            // Очищаем предыдущие результаты
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('candidates').innerHTML = '';
+            document.getElementById('status').innerHTML = 'Анализирую текст...';
             
-            const statusElement = document.getElementById("status");
-            const resultsElement = document.getElementById("results");
+            // Получаем настройки
+            const maxKeyLength = parseInt(document.getElementById('keyLength').value);
             
-            statusElement.innerHTML = "Обработка текста...";
-            resultsElement.innerHTML = "";
+            // Получаем и очищаем текст
+            let ciphertext = document.getElementById('ciphertext').value;
+            ciphertext = ciphertext.toUpperCase().replace(/[^A-Z]/g, '');
             
-            // Даем интерфейсу обновиться перед началом тяжелых вычислений
+            if (!ciphertext) {
+                document.getElementById('status').innerHTML = '<span class="error">Введите текст для анализа!</span>';
+                return;
+            }
+            
+            // Даем браузеру время обновить интерфейс
             setTimeout(() => {
                 try {
-                    // Очистка текста
-                    let cleanText = ciphertext.toUpperCase();
-                    if (removeSpaces) {
-                        cleanText = cleanText.replace(/\s+/g, '');
-                    }
-                    if (removePunctuation) {
-                        cleanText = cleanText.replace(/[^A-Z]/g, '');
-                    }
+                    const startTime = performance.now();
                     
-                    if (!cleanText) {
-                        throw new Error("Нет текста для анализа после очистки");
-                    }
+                    // Получаем лучшие кандидаты
+                    const candidates = findKeyCandidates(ciphertext, maxKeyLength);
                     
-                    statusElement.innerHTML = "Анализируем текст...";
+                    // Расшифровываем с лучшими ключами
+                    const results = candidates.map(candidate => {
+                        return {
+                            key: candidate.key,
+                            decrypted: decryptVigenere(ciphertext, candidate.key),
+                            score: evaluateDecryption(decryptVigenere(ciphertext, candidate.key))
+                        };
+                    });
                     
-                    // Запускаем анализ
-                    setTimeout(() => {
-                        try {
-                            const result = crackVigenere(cleanText, maxKeyLength);
-                            
-                            statusElement.innerHTML = '<span class="success">Анализ завершен!</span>';
-                            resultsElement.innerHTML = `
-                                <p><strong>Найденный ключ:</strong> ${result.key}</p>
-                                <p><strong>Длина ключа:</strong> ${result.key.length}</p>
+                    // Сортируем по качеству
+                    results.sort((a, b) => b.score - a.score);
+                    
+                    const endTime = performance.now();
+                    
+                    // Выводим результаты
+                    if (results.length > 0) {
+                        const best = results[0];
+                        document.getElementById('status').innerHTML = `
+                            <span class="success">Анализ завершен за ${((endTime - startTime)/1000).toFixed(2)} сек.</span>
+                        `;
+                        
+                        document.getElementById('result').innerHTML = `
+                            <div class="key-candidate">
+                                <p><strong>Лучший ключ:</strong> ${best.key}</p>
+                                <p><strong>Длина ключа:</strong> ${best.key.length}</p>
+                                <p><strong>Оценка:</strong> ${best.score.toFixed(2)}</p>
                                 <p><strong>Расшифрованный текст:</strong></p>
-                                <div style="background: #f0f0f0; padding: 10px; border-radius: 4px; font-family: monospace;">${result.decrypted}</div>
-                                <p><small>Метод: частотный анализ английского языка</small></p>
-                            `;
-                        } catch (e) {
-                            statusElement.innerHTML = '<span class="error">Ошибка анализа</span>';
-                            resultsElement.innerHTML = `<p class="error">${e.message}</p>`;
+                                <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 10px; word-break: break-all;">
+                                    ${best.decrypted}
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Показываем другие варианты
+                        if (results.length > 1) {
+                            let candidatesHTML = '<h4>Другие возможные ключи:</h4>';
+                            for (let i = 1; i < Math.min(5, results.length); i++) {
+                                const r = results[i];
+                                candidatesHTML += `
+                                    <div class="key-candidate">
+                                        <p><strong>Ключ:</strong> ${r.key} (длина: ${r.key.length}, оценка: ${r.score.toFixed(2)})</p>
+                                        <p><strong>Текст:</strong> ${r.decrypted.substring(0, 50)}...</p>
+                                    </div>
+                                `;
+                            }
+                            document.getElementById('candidates').innerHTML = candidatesHTML;
                         }
-                    }, 100);
+                    } else {
+                        document.getElementById('status').innerHTML = '<span class="error">Не удалось найти подходящий ключ</span>';
+                    }
                 } catch (e) {
-                    statusElement.innerHTML = '<span class="error">Ошибка обработки</span>';
-                    resultsElement.innerHTML = `<p class="error">${e.message}</p>`;
+                    document.getElementById('status').innerHTML = `<span class="error">Ошибка: ${e.message}</span>`;
+                    console.error(e);
                 }
-            }, 50);
+            }, 100);
         }
 
-        function crackVigenere(ciphertext, maxKeyLength = 15) {
-            let bestKey = "";
-            let bestDecrypted = "";
-            let bestScore = -Infinity;
-
-            // Перебор возможных длин ключа
+        function findKeyCandidates(ciphertext, maxKeyLength) {
+            const candidates = [];
+            
+            // Проверяем все возможные длины ключа
             for (let keyLen = 1; keyLen <= maxKeyLength; keyLen++) {
                 const groups = Array(keyLen).fill().map(() => []);
-
-                // Разделение текста на группы
+                
+                // Разделяем текст на группы
                 for (let i = 0; i < ciphertext.length; i++) {
                     groups[i % keyLen].push(ciphertext[i]);
                 }
-
-                // Подбор ключа для каждой группы
-                let key = "";
+                
+                // Для каждой группы находим наиболее вероятный сдвиг
+                let key = '';
                 for (const group of groups) {
-                    const freqs = {};
-                    for (const c of group) {
-                        freqs[c] = (freqs[c] || 0) + 1;
-                    }
-
-                    let bestShift = 0;
-                    let bestShiftScore = -Infinity;
-
-                    // Проверка всех возможных сдвигов
-                    for (let shift = 0; shift < 26; shift++) {
-                        let score = 0;
-                        for (const c in freqs) {
-                            const decryptedChar = String.fromCharCode(
-                                ((c.charCodeAt(0) - 65 - shift + 26) % 26 + 65
-                            );
-                            score += (englishFreq[decryptedChar] || 0) * freqs[c];
-                        }
-                        if (score > bestShiftScore) {
-                            bestShiftScore = score;
-                            bestShift = shift;
-                        }
-                    }
+                    const freqs = calculateFrequencies(group);
+                    const bestShift = findBestShift(freqs);
                     key += String.fromCharCode(bestShift + 65);
                 }
+                
+                // Добавляем кандидата
+                candidates.push({
+                    key: key,
+                    length: keyLen
+                });
+            }
+            
+            return candidates;
+        }
 
-                // Расшифровка текста
-                let decrypted = "";
-                for (let i = 0; i < ciphertext.length; i++) {
-                    const shift = key.charCodeAt(i % keyLen) - 65;
-                    decrypted += String.fromCharCode(
-                        (ciphertext.charCodeAt(i) - 65 - shift + 26) % 26 + 65
+        function calculateFrequencies(text) {
+            const freqs = {};
+            let total = 0;
+            
+            for (const c of text) {
+                freqs[c] = (freqs[c] || 0) + 1;
+                total++;
+            }
+            
+            // Преобразуем в проценты
+            for (const c in freqs) {
+                freqs[c] = (freqs[c] / total) * 100;
+            }
+            
+            return freqs;
+        }
+
+        function findBestShift(freqs) {
+            let bestShift = 0;
+            let bestScore = -Infinity;
+            
+            // Проверяем все возможные сдвиги (0-25)
+            for (let shift = 0; shift < 26; shift++) {
+                let score = 0;
+                
+                // Считаем оценку для каждого сдвига
+                for (const c in freqs) {
+                    const decryptedChar = String.fromCharCode(
+                        ((c.charCodeAt(0) - 65 - shift + 26) % 26) + 65
                     );
+                    score += (englishFreq[decryptedChar] || 0) * freqs[c];
                 }
-
-                // Оценка качества расшифровки
-                const score = decrypted.split('')
-                    .filter(c => 'ETAOIN'.includes(c))
-                    .length;
-
+                
                 if (score > bestScore) {
                     bestScore = score;
-                    bestKey = key;
-                    bestDecrypted = decrypted;
+                    bestShift = shift;
                 }
             }
+            
+            return bestShift;
+        }
 
-            if (!bestKey) {
-                throw new Error("Не удалось подобрать ключ");
+        function decryptVigenere(ciphertext, key) {
+            let decrypted = '';
+            const keyLen = key.length;
+            
+            for (let i = 0; i < ciphertext.length; i++) {
+                const cipherChar = ciphertext.charCodeAt(i) - 65;
+                const keyChar = key.charCodeAt(i % keyLen) - 65;
+                const decryptedChar = (cipherChar - keyChar + 26) % 26;
+                decrypted += String.fromCharCode(decryptedChar + 65);
             }
+            
+            return decrypted;
+        }
 
-            return {
-                key: bestKey,
-                decrypted: bestDecrypted
-            };
+        function evaluateDecryption(text) {
+            let score = 0;
+            
+            // 1. Частотность букв
+            const textFreq = calculateFrequencies(text);
+            for (const c in textFreq) {
+                score += (englishFreq[c] || 0) * textFreq[c] / 100;
+            }
+            
+            // 2. Проверка биграмм
+            for (let i = 0; i < text.length - 1; i++) {
+                const bigram = text.substr(i, 2);
+                if (commonBigrams.includes(bigram)) {
+                    score += 5;
+                }
+            }
+            
+            // 3. Проверка слов
+            for (const word of commonWords) {
+                if (text.includes(word)) {
+                    score += 10 * word.length;
+                }
+            }
+            
+            // 4. Штраф за редкие буквы
+            const rareLetters = ['Z', 'Q', 'X', 'J', 'K'];
+            for (const c of rareLetters) {
+                if (text.includes(c)) {
+                    score -= 5;
+                }
+            }
+            
+            return score;
         }
     </script>
 </body>
