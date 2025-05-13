@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Взломщик шифра Виженера</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; }
+        textarea, button { width: 100%; padding: 10px; margin: 5px 0; }
+        .result { background: #f5f5f5; padding: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔓 Взлом шифра Виженера (аналог Kryptos K4)</h1>
+    
+    <textarea id="ciphertext" rows="5" placeholder="Введите зашифрованный текст..."></textarea>
+    <button onclick="crack()">Взломать</button>
+    
+    <div class="result">
+        <h3>Результаты:</h3>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // Английская частотность букв
+        const englishFreq = {
+            'E': 12.7, 'T': 9.1, 'A': 8.2, 'O': 7.5, 'I': 6.9, 'N': 6.7,
+            'S': 6.3, 'H': 6.1, 'R': 6.0, 'D': 4.3, 'L': 4.0, 'C': 2.8
+        };
+
+        // Взлом шифра Виженера
+        function crack() {
+            const ciphertext = document.getElementById("ciphertext").value.toUpperCase().replace(/[^A-Z]/g, "");
+            const maxKeyLength = 15; // Максимальная длина ключа для поиска
+            
+            let bestKey = "";
+            let bestScore = -1;
+            let bestDecrypted = "";
+
+            // Перебор длины ключа (метод Казиски)
+            for (let keyLen = 1; keyLen <= maxKeyLength; keyLen++) {
+                const groups = Array.from({ length: keyLen }, () => []);
+                
+                // Разделяем текст на группы
+                for (let i = 0; i < ciphertext.length; i++) {
+                    groups[i % keyLen].push(ciphertext[i]);
+                }
+
+                // Подбираем ключ для каждой группы
+                let key = "";
+                for (const group of groups) {
+                    const freqs = {};
+                    for (const c of group) {
+                        freqs[c] = (freqs[c] || 0) + 1;
+                    }
+
+                    // Ищем лучший сдвиг
+                    let bestShift = 0;
+                    let bestGroupScore = -1;
+                    
+                    for (let shift = 0; shift < 26; shift++) {
+                        let score = 0;
+                        for (const c in freqs) {
+                            const decrypted = String.fromCharCode(((c.charCodeAt(0) - 65 - shift + 26) % 26 + 65);
+                            score += (englishFreq[decrypted] || 0) * freqs[c];
+                        }
+                        if (score > bestGroupScore) {
+                            bestGroupScore = score;
+                            bestShift = shift;
+                        }
+                    }
+                    key += String.fromCharCode(bestShift + 65);
+                }
+
+                // Расшифровываем весь текст текущим ключом
+                let decrypted = "";
+                for (let i = 0; i < ciphertext.length; i++) {
+                    const shift = key.charCodeAt(i % keyLen) - 65;
+                    decrypted += String.fromCharCode((ciphertext.charCodeAt(i) - 65 - shift + 26) % 26 + 65);
+                }
+
+                // Оцениваем результат
+                const score = decrypted.split('').filter(c => "ETAOIN".includes(c)).length;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestKey = key;
+                    bestDecrypted = decrypted;
+                }
+            }
+
+            // Выводим результат
+            document.getElementById("output").innerHTML = `
+                <p><strong>Найденный ключ:</strong> ${bestKey}</p>
+                <p><strong>Расшифрованный текст:</strong> ${bestDecrypted}</p>
+                <p><strong>Метод:</strong> Частотный анализ + перебор длины ключа</p>
+            `;
+        }
+    </script>
+</body>
+</html>
