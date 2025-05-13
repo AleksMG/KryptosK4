@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Декодер шифра Виженера</title>
+    <title>Продвинутый декодер шифра Виженера</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f9f9f9;
@@ -45,9 +45,16 @@
             cursor: pointer;
             width: 100%;
             transition: background 0.3s;
+            margin-bottom: 10px;
         }
         button:hover {
             background: #2980b9;
+        }
+        button.secondary {
+            background: #7f8c8d;
+        }
+        button.secondary:hover {
+            background: #6c7a7d;
         }
         .result-area {
             margin-top: 25px;
@@ -76,142 +83,633 @@
             border-radius: 4px;
             border: 1px solid #ddd;
         }
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #3498db;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            line-height: 20px;
+        }
+        .settings-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .settings-group {
+            flex: 1;
+            min-width: 200px;
+            background: #eaf2f8;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .settings-group h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .key-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .key-info {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .key-info:hover {
+            background: #eaf2f8;
+        }
+        .highlight {
+            background-color: #fffacd;
+        }
+        .analysis-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .tab-button {
+            padding: 10px 15px;
+            background: #ddd;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 4px 4px 0 0;
+        }
+        .tab-button.active {
+            background: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .stats-table th, .stats-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .stats-table th {
+            background-color: #f2f2f2;
+        }
+        .stats-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 Декодер шифра Виженера</h1>
+        <h1>🔍 Продвинутый декодер шифра Виженера</h1>
         
         <div class="settings">
-            <h3>Настройки анализа:</h3>
-            <p>Максимальная длина ключа: <span id="keyLengthValue">15</span></p>
-            <input type="range" id="keyLength" min="1" max="30" value="15" oninput="document.getElementById('keyLengthValue').textContent = this.value">
+            <h3>Настройки анализа</h3>
+            
+            <div class="settings-row">
+                <div class="settings-group">
+                    <h4>Параметры ключа</h4>
+                    <label>
+                        Максимальная длина ключа:
+                        <input type="range" id="keyLength" min="1" max="30" value="15" oninput="updateKeyLength()">
+                        <span id="keyLengthValue">15</span>
+                    </label>
+                    
+                    <label>
+                        Минимальная длина ключа:
+                        <input type="range" id="minKeyLength" min="1" max="15" value="1" oninput="updateMinKeyLength()">
+                        <span id="minKeyLengthValue">1</span>
+                    </label>
+                    
+                    <label>
+                        Метод анализа:
+                        <select id="analysisMethod">
+                            <option value="auto">Автоматический (частотный анализ)</option>
+                            <option value="bruteforce">Брутфорс (все возможные ключи)</option>
+                            <option value="known-length">Известная длина ключа</option>
+                        </select>
+                    </label>
+                </div>
+                
+                <div class="settings-group">
+                    <h4>Параметры текста</h4>
+                    <label>
+                        Язык текста:
+                        <select id="language">
+                            <option value="english">Английский</option>
+                            <option value="russian">Русский</option>
+                        </select>
+                    </label>
+                    
+                    <label>
+                        Учитывать регистр:
+                        <input type="checkbox" id="preserveCase" checked>
+                    </label>
+                    
+                    <label>
+                        Сохранять пробелы и знаки:
+                        <input type="checkbox" id="preserveSpaces" checked>
+                    </label>
+                </div>
+                
+                <div class="settings-group">
+                    <h4>Дополнительные параметры</h4>
+                    <label>
+                        Максимальное число вариантов:
+                        <input type="number" id="maxResults" min="1" max="50" value="10">
+                    </label>
+                    
+                    <label>
+                        Порог качества:
+                        <input type="range" id="qualityThreshold" min="0" max="100" value="50">
+                        <span id="qualityThresholdValue">50</span>%
+                    </label>
+                </div>
+            </div>
         </div>
 
         <textarea id="ciphertext" placeholder="Введите зашифрованный текст...">OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR</textarea>
         
-        <button onclick="decode()">Анализировать и декодировать</button>
+        <button onclick="startAnalysis()">Запустить анализ</button>
+        <button class="secondary" onclick="stopAnalysis()" id="stopButton" disabled>Остановить анализ</button>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
         
         <div class="result-area">
-            <h3>Результаты анализа:</h3>
-            <div id="status">Готов к работе</div>
-            <div id="result"></div>
-            <div id="candidates"></div>
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('results')">Результаты</button>
+                <button class="tab-button" onclick="switchTab('analysis')">Анализ ключа</button>
+                <button class="tab-button" onclick="switchTab('stats')">Статистика</button>
+            </div>
+            
+            <div id="status">Готов к работе. Введите текст и нажмите "Запустить анализ".</div>
+            
+            <div id="results" class="tab-content active">
+                <h3>Лучшие варианты расшифровки:</h3>
+                <div id="result"></div>
+                <div id="candidates" class="key-grid"></div>
+            </div>
+            
+            <div id="analysis" class="tab-content">
+                <h3>Анализ возможных ключей</h3>
+                <div id="keyAnalysis"></div>
+            </div>
+            
+            <div id="stats" class="tab-content">
+                <h3>Статистика текста</h3>
+                <div id="textStats"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Частотность букв в английском языке (проценты)
-        const englishFreq = {
-            'A': 8.167, 'B': 1.492, 'C': 2.782, 'D': 4.253, 'E': 12.702,
-            'F': 2.228, 'G': 2.015, 'H': 6.094, 'I': 6.966, 'J': 0.153,
-            'K': 0.772, 'L': 4.025, 'M': 2.406, 'N': 6.749, 'O': 7.507,
-            'P': 1.929, 'Q': 0.095, 'R': 5.987, 'S': 6.327, 'T': 9.056,
-            'U': 2.758, 'V': 0.978, 'W': 2.360, 'X': 0.150, 'Y': 1.974,
-            'Z': 0.074
+        // Частотность букв в разных языках
+        const languageFrequencies = {
+            english: {
+                name: "Английский",
+                frequencies: {
+                    'A': 8.167, 'B': 1.492, 'C': 2.782, 'D': 4.253, 'E': 12.702,
+                    'F': 2.228, 'G': 2.015, 'H': 6.094, 'I': 6.966, 'J': 0.153,
+                    'K': 0.772, 'L': 4.025, 'M': 2.406, 'N': 6.749, 'O': 7.507,
+                    'P': 1.929, 'Q': 0.095, 'R': 5.987, 'S': 6.327, 'T': 9.056,
+                    'U': 2.758, 'V': 0.978, 'W': 2.360, 'X': 0.150, 'Y': 1.974,
+                    'Z': 0.074
+                },
+                commonBigrams: [
+                    'TH', 'HE', 'IN', 'ER', 'AN', 'RE', 'ON', 'AT',
+                    'EN', 'ND', 'TI', 'ES', 'OR', 'TE', 'OF', 'ED'
+                ],
+                commonTrigrams: [
+                    'THE', 'AND', 'ING', 'HER', 'HAT', 'HIS', 'THA', 'ERE',
+                    'FOR', 'ENT', 'ION', 'TER', 'WAS', 'YOU', 'ITH', 'VER'
+                ],
+                commonWords: [
+                    'THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL',
+                    'ANY', 'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'OUT', 'GET',
+                    'HIS', 'HAS', 'WHO', 'ITS', 'HAD', 'HOW', 'SHE', 'THEY'
+                ]
+            },
+            russian: {
+                name: "Русский",
+                frequencies: {
+                    'А': 8.01, 'Б': 1.59, 'В': 4.54, 'Г': 1.70, 'Д': 2.98,
+                    'Е': 8.45, 'Ё': 0.04, 'Ж': 0.94, 'З': 1.65, 'И': 7.35,
+                    'Й': 1.21, 'К': 3.49, 'Л': 4.40, 'М': 3.21, 'Н': 6.70,
+                    'О': 10.97, 'П': 2.81, 'Р': 4.73, 'С': 5.47, 'Т': 6.26,
+                    'У': 2.62, 'Ф': 0.26, 'Х': 0.97, 'Ц': 0.48, 'Ч': 1.44,
+                    'Ш': 0.73, 'Щ': 0.36, 'Ъ': 0.04, 'Ы': 1.90, 'Ь': 1.74,
+                    'Э': 0.32, 'Ю': 0.64, 'Я': 2.01
+                },
+                commonBigrams: [
+                    'СТ', 'НО', 'ЕН', 'ТО', 'НА', 'ОВ', 'НИ', 'РА',
+                    'ВО', 'КО', 'ЕЛ', 'РО', 'ОЛ', 'ТЕ', 'ЛЬ', 'НЕ'
+                ],
+                commonTrigrams: [
+                    'СТО', 'ЕНО', 'НОВ', 'ТОВ', 'ОВО', 'ОВА', 'ЕНИ', 'РАЗ',
+                    'ПРО', 'ГОД', 'РОД', 'КОТ', 'ОРО', 'ТАК', 'ОГО', 'ТОР'
+                ],
+                commonWords: [
+                    'И', 'В', 'НЕ', 'НА', 'Я', 'БЫТЬ', 'ОН', 'С',
+                    'ЧТО', 'А', 'ЭТО', 'ВЕСЬ', 'ОНА', 'ПО', 'НО', 'ОНИ',
+                    'К', 'У', 'ТЫ', 'ЕГО', 'ЗА', 'ИЗ', 'МЫ', 'ВЫ'
+                ]
+            }
         };
 
-        // Самые частые биграммы в английском
-        const commonBigrams = [
-            'TH', 'HE', 'IN', 'ER', 'AN', 'RE', 'ON', 'AT',
-            'EN', 'ND', 'TI', 'ES', 'OR', 'TE', 'OF', 'ED'
-        ];
-
-        // Самые частые слова в английском
-        const commonWords = [
-            'THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL',
-            'ANY', 'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'OUT', 'GET',
-            'HIS', 'HAS', 'WHO', 'ITS', 'HAD', 'HOW', 'SHE', 'THEY'
-        ];
-
-        function decode() {
+        // Глобальные переменные для управления процессом анализа
+        let isAnalyzing = false;
+        let stopRequested = false;
+        let currentLanguage = 'english';
+        let currentFrequencies = languageFrequencies.english;
+        
+        // Обновляем отображение длины ключа
+        function updateKeyLength() {
+            const slider = document.getElementById('keyLength');
+            const display = document.getElementById('keyLengthValue');
+            display.textContent = slider.value;
+            
+            // Обновляем максимальное значение минимальной длины
+            const minSlider = document.getElementById('minKeyLength');
+            minSlider.max = slider.value;
+            if (parseInt(minSlider.value) > parseInt(slider.value)) {
+                minSlider.value = slider.value;
+                document.getElementById('minKeyLengthValue').textContent = slider.value;
+            }
+        }
+        
+        function updateMinKeyLength() {
+            const slider = document.getElementById('minKeyLength');
+            const display = document.getElementById('minKeyLengthValue');
+            display.textContent = slider.value;
+        }
+        
+        function updateQualityThreshold() {
+            const slider = document.getElementById('qualityThreshold');
+            const display = document.getElementById('qualityThresholdValue');
+            display.textContent = slider.value;
+        }
+        
+        // Переключение между вкладками
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`.tab-button[onclick="switchTab('${tabName}')"]`).classList.add('active');
+        }
+        
+        // Основная функция запуска анализа
+        function startAnalysis() {
+            if (isAnalyzing) return;
+            
             // Очищаем предыдущие результаты
             document.getElementById('result').innerHTML = '';
             document.getElementById('candidates').innerHTML = '';
-            document.getElementById('status').innerHTML = 'Анализирую текст...';
+            document.getElementById('keyAnalysis').innerHTML = '';
+            document.getElementById('textStats').innerHTML = '';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressBar').textContent = '0%';
             
             // Получаем настройки
             const maxKeyLength = parseInt(document.getElementById('keyLength').value);
+            const minKeyLength = parseInt(document.getElementById('minKeyLength').value);
+            const analysisMethod = document.getElementById('analysisMethod').value;
+            const maxResults = parseInt(document.getElementById('maxResults').value);
+            const qualityThreshold = parseInt(document.getElementById('qualityThreshold').value) / 100;
+            currentLanguage = document.getElementById('language').value;
+            currentFrequencies = languageFrequencies[currentLanguage];
             
             // Получаем и очищаем текст
             let ciphertext = document.getElementById('ciphertext').value;
-            ciphertext = ciphertext.toUpperCase().replace(/[^A-Z]/g, '');
+            const preserveCase = document.getElementById('preserveCase').checked;
+            const preserveSpaces = document.getElementById('preserveSpaces').checked;
             
             if (!ciphertext) {
                 document.getElementById('status').innerHTML = '<span class="error">Введите текст для анализа!</span>';
                 return;
             }
             
-            // Даем браузеру время обновить интерфейс
+            // Устанавливаем флаг анализа
+            isAnalyzing = true;
+            stopRequested = false;
+            document.getElementById('stopButton').disabled = false;
+            document.getElementById('status').innerHTML = 'Анализирую текст...';
+            
+            // Запускаем в отдельном потоке, чтобы не блокировать интерфейс
             setTimeout(() => {
                 try {
                     const startTime = performance.now();
                     
-                    // Получаем лучшие кандидаты
-                    const candidates = findKeyCandidates(ciphertext, maxKeyLength);
+                    // Очищаем текст (сохраняем оригинал для вывода)
+                    const originalText = ciphertext;
+                    ciphertext = prepareText(ciphertext, preserveCase, preserveSpaces);
                     
-                    // Расшифровываем с лучшими ключами
-                    const results = candidates.map(candidate => {
-                        return {
-                            key: candidate.key,
-                            decrypted: decryptVigenere(ciphertext, candidate.key),
-                            score: evaluateDecryption(decryptVigenere(ciphertext, candidate.key))
-                        };
+                    // Анализируем текст и показываем статистику
+                    analyzeTextStats(ciphertext);
+                    
+                    // В зависимости от выбранного метода запускаем анализ
+                    let resultsPromise;
+                    
+                    if (analysisMethod === 'bruteforce') {
+                        resultsPromise = bruteForceAnalysis(ciphertext, minKeyLength, maxKeyLength, maxResults, qualityThreshold);
+                    } else if (analysisMethod === 'known-length') {
+                        resultsPromise = analyzeKnownLength(ciphertext, maxKeyLength, maxResults);
+                    } else {
+                        resultsPromise = autoAnalysis(ciphertext, minKeyLength, maxKeyLength, maxResults, qualityThreshold);
+                    }
+                    
+                    resultsPromise.then(results => {
+                        if (stopRequested) return;
+                        
+                        const endTime = performance.now();
+                        
+                        // Выводим результаты
+                        if (results.length > 0) {
+                            const best = results[0];
+                            document.getElementById('status').innerHTML = `
+                                <span class="success">Анализ завершен за ${((endTime - startTime)/1000).toFixed(2)} сек. Проверено ${results.length} вариантов.</span>
+                            `;
+                            
+                            // Форматируем оригинальный текст с выделением ключа
+                            const formattedOriginal = formatOriginalText(originalText, best.key, preserveSpaces);
+                            
+                            document.getElementById('result').innerHTML = `
+                                <div class="key-candidate">
+                                    <p><strong>Лучший ключ:</strong> <span class="highlight">${best.key}</span> (длина: ${best.key.length})</p>
+                                    <p><strong>Оценка:</strong> ${best.score.toFixed(2)}</p>
+                                    <p><strong>Расшифрованный текст:</strong></p>
+                                    <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 10px; word-break: break-all;">
+                                        ${best.decrypted}
+                                    </div>
+                                    <p><strong>Исходный текст с ключом:</strong></p>
+                                    <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 10px; word-break: break-all; font-family: monospace;">
+                                        ${formattedOriginal}
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Показываем другие варианты
+                            if (results.length > 1) {
+                                let candidatesHTML = '<h4>Другие возможные ключи:</h4><div class="key-grid">';
+                                for (let i = 1; i < Math.min(maxResults, results.length); i++) {
+                                    const r = results[i];
+                                    candidatesHTML += `
+                                        <div class="key-candidate key-info" onclick="showKeyDetails('${r.key}')">
+                                            <p><strong>Ключ:</strong> ${r.key}</p>
+                                            <p><strong>Длина:</strong> ${r.key.length}</p>
+                                            <p><strong>Оценка:</strong> ${r.score.toFixed(2)}</p>
+                                            <p><strong>Текст:</strong> ${r.decrypted.substring(0, 30)}${r.decrypted.length > 30 ? '...' : ''}</p>
+                                        </div>
+                                    `;
+                                }
+                                candidatesHTML += '</div>';
+                                document.getElementById('candidates').innerHTML = candidatesHTML;
+                            }
+                        } else {
+                            document.getElementById('status').innerHTML = '<span class="error">Не удалось найти подходящий ключ</span>';
+                        }
+                        
+                        // Показываем анализ ключа для лучшего результата
+                        if (results.length > 0) {
+                            showKeyAnalysis(results[0].key, ciphertext);
+                        }
+                    }).catch(e => {
+                        if (!stopRequested) {
+                            document.getElementById('status').innerHTML = `<span class="error">Ошибка: ${e.message}</span>`;
+                            console.error(e);
+                        }
+                    }).finally(() => {
+                        isAnalyzing = false;
+                        document.getElementById('stopButton').disabled = true;
                     });
                     
-                    // Сортируем по качеству
-                    results.sort((a, b) => b.score - a.score);
-                    
-                    const endTime = performance.now();
-                    
-                    // Выводим результаты
-                    if (results.length > 0) {
-                        const best = results[0];
-                        document.getElementById('status').innerHTML = `
-                            <span class="success">Анализ завершен за ${((endTime - startTime)/1000).toFixed(2)} сек.</span>
-                        `;
-                        
-                        document.getElementById('result').innerHTML = `
-                            <div class="key-candidate">
-                                <p><strong>Лучший ключ:</strong> ${best.key}</p>
-                                <p><strong>Длина ключа:</strong> ${best.key.length}</p>
-                                <p><strong>Оценка:</strong> ${best.score.toFixed(2)}</p>
-                                <p><strong>Расшифрованный текст:</strong></p>
-                                <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 10px; word-break: break-all;">
-                                    ${best.decrypted}
-                                </div>
-                            </div>
-                        `;
-                        
-                        // Показываем другие варианты
-                        if (results.length > 1) {
-                            let candidatesHTML = '<h4>Другие возможные ключи:</h4>';
-                            for (let i = 1; i < Math.min(5, results.length); i++) {
-                                const r = results[i];
-                                candidatesHTML += `
-                                    <div class="key-candidate">
-                                        <p><strong>Ключ:</strong> ${r.key} (длина: ${r.key.length}, оценка: ${r.score.toFixed(2)})</p>
-                                        <p><strong>Текст:</strong> ${r.decrypted.substring(0, 50)}...</p>
-                                    </div>
-                                `;
-                            }
-                            document.getElementById('candidates').innerHTML = candidatesHTML;
-                        }
-                    } else {
-                        document.getElementById('status').innerHTML = '<span class="error">Не удалось найти подходящий ключ</span>';
-                    }
                 } catch (e) {
                     document.getElementById('status').innerHTML = `<span class="error">Ошибка: ${e.message}</span>`;
                     console.error(e);
+                    isAnalyzing = false;
+                    document.getElementById('stopButton').disabled = true;
                 }
             }, 100);
         }
-
-        function findKeyCandidates(ciphertext, maxKeyLength) {
+        
+        // Остановка анализа
+        function stopAnalysis() {
+            if (isAnalyzing) {
+                stopRequested = true;
+                document.getElementById('status').innerHTML = '<span class="error">Анализ остановлен пользователем</span>';
+            }
+        }
+        
+        // Подготовка текста (очистка и приведение к верхнему регистру)
+        function prepareText(text, preserveCase, preserveSpaces) {
+            let result = text;
+            
+            if (!preserveCase) {
+                result = result.toUpperCase();
+            }
+            
+            if (!preserveSpaces) {
+                // Удаляем все, кроме букв
+                if (currentLanguage === 'english') {
+                    result = result.replace(/[^A-Za-z]/g, '');
+                } else {
+                    result = result.replace(/[^А-Яа-яЁё]/g, '');
+                }
+            }
+            
+            return result;
+        }
+        
+        // Форматирование оригинального текста с выделением ключа
+        function formatOriginalText(text, key, preserveSpaces) {
+            let result = '';
+            let keyPos = 0;
+            const keyLength = key.length;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                let isLetter = false;
+                
+                if (currentLanguage === 'english') {
+                    isLetter = /[A-Za-z]/.test(char);
+                } else {
+                    isLetter = /[А-Яа-яЁё]/.test(char);
+                }
+                
+                if (isLetter) {
+                    const keyChar = key[keyPos % keyLength];
+                    result += `<span class="highlight" title="Символ ключа: ${keyChar}">${char}</span>`;
+                    keyPos++;
+                } else if (preserveSpaces) {
+                    result += char;
+                }
+            }
+            
+            return result;
+        }
+        
+        // Автоматический анализ с определением длины ключа
+        function autoAnalysis(ciphertext, minKeyLength, maxKeyLength, maxResults, qualityThreshold) {
+            return new Promise((resolve) => {
+                const candidates = findKeyCandidates(ciphertext, minKeyLength, maxKeyLength);
+                
+                if (stopRequested) return resolve([]);
+                
+                // Расшифровываем с лучшими ключами и оцениваем
+                const results = [];
+                const totalKeys = candidates.length;
+                let processed = 0;
+                
+                for (const candidate of candidates) {
+                    if (stopRequested) return resolve([]);
+                    
+                    const decrypted = decryptVigenere(ciphertext, candidate.key);
+                    const score = evaluateDecryption(decrypted);
+                    
+                    if (score >= qualityThreshold * 100) {
+                        results.push({
+                            key: candidate.key,
+                            decrypted: decrypted,
+                            score: score,
+                            length: candidate.key.length
+                        });
+                    }
+                    
+                    processed++;
+                    updateProgress(processed / totalKeys * 100);
+                }
+                
+                // Сортируем по качеству
+                results.sort((a, b) => b.score - a.score);
+                
+                // Ограничиваем количество результатов
+                resolve(results.slice(0, maxResults));
+            });
+        }
+        
+        // Брутфорс всех возможных ключей заданной длины
+        function bruteForceAnalysis(ciphertext, minKeyLength, maxKeyLength, maxResults, qualityThreshold) {
+            return new Promise((resolve) => {
+                const results = [];
+                const totalKeys = calculateTotalKeys(minKeyLength, maxKeyLength);
+                let processed = 0;
+                
+                for (let len = minKeyLength; len <= maxKeyLength; len++) {
+                    if (stopRequested) return resolve([]);
+                    
+                    // Генерируем все возможные ключи данной длины
+                    const keys = generateAllKeys(len);
+                    
+                    for (const key of keys) {
+                        if (stopRequested) return resolve([]);
+                        
+                        const decrypted = decryptVigenere(ciphertext, key);
+                        const score = evaluateDecryption(decrypted);
+                        
+                        if (score >= qualityThreshold * 100) {
+                            results.push({
+                                key: key,
+                                decrypted: decrypted,
+                                score: score,
+                                length: key.length
+                            });
+                        }
+                        
+                        processed++;
+                        if (processed % 1000 === 0) {
+                            updateProgress(processed / totalKeys * 100);
+                        }
+                    }
+                }
+                
+                // Сортируем по качеству
+                results.sort((a, b) => b.score - a.score);
+                
+                // Ограничиваем количество результатов
+                resolve(results.slice(0, maxResults));
+            });
+        }
+        
+        // Анализ при известной длине ключа
+        function analyzeKnownLength(ciphertext, keyLength, maxResults) {
+            return new Promise((resolve) => {
+                const candidates = findKeyCandidates(ciphertext, keyLength, keyLength);
+                
+                if (stopRequested) return resolve([]);
+                
+                // Расшифровываем с лучшими ключами и оцениваем
+                const results = [];
+                
+                for (const candidate of candidates) {
+                    if (stopRequested) return resolve([]);
+                    
+                    const decrypted = decryptVigenere(ciphertext, candidate.key);
+                    const score = evaluateDecryption(decrypted);
+                    
+                    results.push({
+                        key: candidate.key,
+                        decrypted: decrypted,
+                        score: score,
+                        length: candidate.key.length
+                    });
+                }
+                
+                // Сортируем по качеству
+                results.sort((a, b) => b.score - a.score);
+                
+                // Ограничиваем количество результатов
+                resolve(results.slice(0, maxResults));
+            });
+        }
+        
+        // Поиск кандидатов на ключ с помощью частотного анализа
+        function findKeyCandidates(ciphertext, minKeyLength, maxKeyLength) {
             const candidates = [];
             
             // Проверяем все возможные длины ключа
-            for (let keyLen = 1; keyLen <= maxKeyLength; keyLen++) {
+            for (let keyLen = minKeyLength; keyLen <= maxKeyLength; keyLen++) {
+                if (stopRequested) return candidates;
+                
                 const groups = Array(keyLen).fill().map(() => []);
                 
                 // Разделяем текст на группы
@@ -224,7 +722,7 @@
                 for (const group of groups) {
                     const freqs = calculateFrequencies(group);
                     const bestShift = findBestShift(freqs);
-                    key += String.fromCharCode(bestShift + 65);
+                    key += String.fromCharCode(bestShift + (currentLanguage === 'english' ? 65 : 1040)); // A или А
                 }
                 
                 // Добавляем кандидата
@@ -232,18 +730,60 @@
                     key: key,
                     length: keyLen
                 });
+                
+                updateProgress(keyLen / maxKeyLength * 50); // Первая половина прогресса
             }
             
             return candidates;
         }
-
+        
+        // Расчет общего количества ключей для брутфорса
+        function calculateTotalKeys(minKeyLength, maxKeyLength) {
+            let total = 0;
+            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
+            
+            for (let len = minKeyLength; len <= maxKeyLength; len++) {
+                total += Math.pow(alphabetSize, len);
+            }
+            
+            return total;
+        }
+        
+        // Генерация всех возможных ключей заданной длины
+        function generateAllKeys(length) {
+            const keys = [];
+            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
+            const firstCharCode = currentLanguage === 'english' ? 65 : 1040; // A или А
+            
+            // Рекурсивная функция для генерации ключей
+            function generate(current) {
+                if (current.length === length) {
+                    keys.push(current);
+                    return;
+                }
+                
+                for (let i = 0; i < alphabetSize; i++) {
+                    if (stopRequested) return;
+                    generate(current + String.fromCharCode(firstCharCode + i));
+                }
+            }
+            
+            generate('');
+            return keys;
+        }
+        
+        // Расчет частот символов в тексте
         function calculateFrequencies(text) {
             const freqs = {};
             let total = 0;
             
             for (const c of text) {
-                freqs[c] = (freqs[c] || 0) + 1;
-                total++;
+                const upperC = c.toUpperCase();
+                if ((currentLanguage === 'english' && /[A-Z]/.test(upperC)) || 
+                    (currentLanguage === 'russian' && /[А-ЯЁ]/.test(upperC))) {
+                    freqs[upperC] = (freqs[upperC] || 0) + 1;
+                    total++;
+                }
             }
             
             // Преобразуем в проценты
@@ -253,21 +793,43 @@
             
             return freqs;
         }
-
+        
+        // Поиск наилучшего сдвига для группы символов
         function findBestShift(freqs) {
             let bestShift = 0;
             let bestScore = -Infinity;
+            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
             
-            // Проверяем все возможные сдвиги (0-25)
-            for (let shift = 0; shift < 26; shift++) {
+            // Проверяем все возможные сдвиги
+            for (let shift = 0; shift < alphabetSize; shift++) {
                 let score = 0;
                 
                 // Считаем оценку для каждого сдвига
                 for (const c in freqs) {
-                    const decryptedChar = String.fromCharCode(
-                        ((c.charCodeAt(0) - 65 - shift + 26) % 26) + 65
-                    );
-                    score += (englishFreq[decryptedChar] || 0) * freqs[c];
+                    let decryptedChar;
+                    if (currentLanguage === 'english') {
+                        decryptedChar = String.fromCharCode(
+                            ((c.charCodeAt(0) - 65 - shift + 26) % 26) + 65
+                        );
+                    } else {
+                        // Для русского языка учитываем Ё
+                        const code = c.charCodeAt(0);
+                        let index;
+                        
+                        if (code >= 1040 && code <= 1045) index = code - 1040;
+                        else if (code === 1025) index = 6; // Ё
+                        else if (code >= 1046 && code <= 1071) index = code - 1040 + 1; // +1 из-за Ё
+                        else continue;
+                        
+                        decryptedChar = String.fromCharCode(
+                            ((index - shift + alphabetSize) % alphabetSize) + 1040
+                        );
+                        
+                        // Корректировка для Ё
+                        if (decryptedChar === String.fromCharCode(1046)) decryptedChar = 'Ё';
+                    }
+                    
+                    score += (currentFrequencies.frequencies[decryptedChar] || 0) * freqs[c];
                 }
                 
                 if (score > bestScore) {
@@ -278,55 +840,357 @@
             
             return bestShift;
         }
-
+        
+        // Дешифровка текста Виженера
         function decryptVigenere(ciphertext, key) {
             let decrypted = '';
             const keyLen = key.length;
+            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
+            const firstCharCode = currentLanguage === 'english' ? 65 : 1040; // A или А
             
             for (let i = 0; i < ciphertext.length; i++) {
-                const cipherChar = ciphertext.charCodeAt(i) - 65;
-                const keyChar = key.charCodeAt(i % keyLen) - 65;
-                const decryptedChar = (cipherChar - keyChar + 26) % 26;
-                decrypted += String.fromCharCode(decryptedChar + 65);
+                const cipherChar = ciphertext[i];
+                let upperC = cipherChar.toUpperCase();
+                
+                // Проверяем, является ли символ буквой нужного алфавита
+                if ((currentLanguage === 'english' && /[A-Z]/.test(upperC)) || 
+                    (currentLanguage === 'russian' && /[А-ЯЁ]/.test(upperC))) {
+                    
+                    // Получаем код символа с учетом языка
+                    let cipherCode, keyCode;
+                    
+                    if (currentLanguage === 'english') {
+                        cipherCode = upperC.charCodeAt(0) - 65;
+                        keyCode = key[i % keyLen].toUpperCase().charCodeAt(0) - 65;
+                    } else {
+                        // Для русского языка учитываем Ё
+                        cipherCode = upperC === 'Ё' ? 6 : 
+                                    (upperC.charCodeAt(0) >= 1046 ? upperC.charCodeAt(0) - 1040 + 1 : 
+                                    upperC.charCodeAt(0) - 1040);
+                                    
+                        const keyChar = key[i % keyLen].toUpperCase();
+                        keyCode = keyChar === 'Ё' ? 6 : 
+                                 (keyChar.charCodeAt(0) >= 1046 ? keyChar.charCodeAt(0) - 1040 + 1 : 
+                                 keyChar.charCodeAt(0) - 1040);
+                    }
+                    
+                    const decryptedCode = (cipherCode - keyCode + alphabetSize) % alphabetSize;
+                    let decryptedChar;
+                    
+                    if (currentLanguage === 'english') {
+                        decryptedChar = String.fromCharCode(decryptedCode + 65);
+                    } else {
+                        // Для русского обратная корректировка
+                        decryptedChar = decryptedCode === 6 ? 'Ё' : 
+                                       (decryptedCode >= 7 ? String.fromCharCode(decryptedCode + 1040 - 1) : 
+                                       String.fromCharCode(decryptedCode + 1040));
+                    }
+                    
+                    // Сохраняем регистр
+                    if (/[a-z]/.test(cipherChar) && document.getElementById('preserveCase').checked) {
+                        decrypted += decryptedChar.toLowerCase();
+                    } else {
+                        decrypted += decryptedChar;
+                    }
+                } else if (document.getElementById('preserveSpaces').checked) {
+                    // Сохраняем не-буквенные символы, если нужно
+                    decrypted += cipherChar;
+                }
             }
             
             return decrypted;
         }
-
+        
+        // Оценка качества расшифрованного текста
         function evaluateDecryption(text) {
             let score = 0;
             
             // 1. Частотность букв
             const textFreq = calculateFrequencies(text);
             for (const c in textFreq) {
-                score += (englishFreq[c] || 0) * textFreq[c] / 100;
+                score += (currentFrequencies.frequencies[c] || 0) * textFreq[c] / 100;
             }
             
             // 2. Проверка биграмм
             for (let i = 0; i < text.length - 1; i++) {
-                const bigram = text.substr(i, 2);
-                if (commonBigrams.includes(bigram)) {
+                const bigram = text.substr(i, 2).toUpperCase();
+                if (currentFrequencies.commonBigrams.includes(bigram)) {
                     score += 5;
                 }
             }
             
-            // 3. Проверка слов
-            for (const word of commonWords) {
-                if (text.includes(word)) {
-                    score += 10 * word.length;
+            // 3. Проверка триграмм
+            for (let i = 0; i < text.length - 2; i++) {
+                const trigram = text.substr(i, 3).toUpperCase();
+                if (currentFrequencies.commonTrigrams.includes(trigram)) {
+                    score += 15;
                 }
             }
             
-            // 4. Штраф за редкие буквы
-            const rareLetters = ['Z', 'Q', 'X', 'J', 'K'];
+            // 4. Проверка слов
+            for (const word of currentFrequencies.commonWords) {
+                const regex = new RegExp(word, 'gi');
+                const matches = text.match(regex);
+                if (matches) {
+                    score += 20 * word.length * matches.length;
+                }
+            }
+            
+            // 5. Штраф за редкие буквы
+            const rareLetters = currentLanguage === 'english' ? 
+                ['Z', 'Q', 'X', 'J', 'K'] : 
+                ['Ф', 'Ц', 'Щ', 'Э', 'Ъ'];
+                
             for (const c of rareLetters) {
-                if (text.includes(c)) {
-                    score -= 5;
+                const regex = new RegExp(c, 'g');
+                const matches = text.toUpperCase().match(regex);
+                if (matches) {
+                    score -= 5 * matches.length;
+                }
+            }
+            
+            // 6. Бонус за пробелы (если они есть и выглядят осмысленно)
+            if (/\s/.test(text)) {
+                const words = text.split(/\s+/).filter(w => w.length > 0);
+                if (words.length > 3) {
+                    // Проверяем, есть ли среди слов частые слова
+                    let commonWordsCount = 0;
+                    for (const word of words) {
+                        if (currentFrequencies.commonWords.includes(word.toUpperCase())) {
+                            commonWordsCount++;
+                        }
+                    }
+                    
+                    if (commonWordsCount > 0) {
+                        score += 50 * commonWordsCount;
+                    }
                 }
             }
             
             return score;
         }
+        
+        // Обновление индикатора прогресса
+        function updateProgress(percent) {
+            const progressBar = document.getElementById('progressBar');
+            const rounded = Math.round(percent);
+            progressBar.style.width = `${rounded}%`;
+            progressBar.textContent = `${rounded}%`;
+        }
+        
+        // Анализ статистики текста
+        function analyzeTextStats(text) {
+            const statsDiv = document.getElementById('textStats');
+            const freqs = calculateFrequencies(text);
+            const totalLetters = Object.values(freqs).reduce((a, b) => a + b, 0) / 100;
+            
+            // Сортируем буквы по частоте
+            const sortedFreqs = Object.entries(freqs).sort((a, b) => b[1] - a[1]);
+            
+            let html = `
+                <p><strong>Общее количество букв:</strong> ${Math.round(totalLetters)}</p>
+                <h4>Частотность букв:</h4>
+                <table class="stats-table">
+                    <tr>
+                        <th>Буква</th>
+                        <th>Частота</th>
+                        <th>Ожидаемая</th>
+                        <th>Отклонение</th>
+                    </tr>
+            `;
+            
+            for (const [char, freq] of sortedFreqs) {
+                const expected = currentFrequencies.frequencies[char] || 0;
+                const deviation = freq - expected;
+                const deviationColor = deviation > 0 ? '#e74c3c' : '#27ae60';
+                
+                html += `
+                    <tr>
+                        <td>${char}</td>
+                        <td>${freq.toFixed(2)}%</td>
+                        <td>${expected.toFixed(2)}%</td>
+                        <td style="color: ${deviationColor}">${deviation > 0 ? '+' : ''}${deviation.toFixed(2)}%</td>
+                    </tr>
+                `;
+            }
+            
+            html += `</table>`;
+            
+            // Анализ индекса совпадений
+            const ic = calculateIndexOfCoincidence(text);
+            const expectedIc = currentLanguage === 'english' ? 0.0667 : 0.0553;
+            
+            html += `
+                <div class="analysis-section">
+                    <h4>Индекс совпадений (IC):</h4>
+                    <p>Рассчитанный: ${ic.toFixed(5)}</p>
+                    <p>Ожидаемый для ${currentFrequencies.name}: ${expectedIc.toFixed(5)}</p>
+                    <p>Интерпретация: ${interpretIC(ic, expectedIc)}</p>
+                </div>
+            `;
+            
+            statsDiv.innerHTML = html;
+        }
+        
+        // Расчет индекса совпадений
+        function calculateIndexOfCoincidence(text) {
+            const freqs = {};
+            let total = 0;
+            
+            for (const c of text) {
+                const upperC = c.toUpperCase();
+                if ((currentLanguage === 'english' && /[A-Z]/.test(upperC)) || 
+                    (currentLanguage === 'russian' && /[А-ЯЁ]/.test(upperC))) {
+                    freqs[upperC] = (freqs[upperC] || 0) + 1;
+                    total++;
+                }
+            }
+            
+            if (total < 2) return 0;
+            
+            let sum = 0;
+            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
+            
+            for (const c in freqs) {
+                sum += freqs[c] * (freqs[c] - 1);
+            }
+            
+            return sum / (total * (total - 1));
+        }
+        
+        // Интерпретация индекса совпадений
+        function interpretIC(ic, expectedIc) {
+            const ratio = ic / expectedIc;
+            
+            if (ratio > 0.9 && ratio < 1.1) {
+                return "Текст, вероятно, не зашифрован или зашифрован моноалфавитным шифром";
+            } else if (ic < 0.038) {
+                return "Возможно, полиалфавитное шифрование с длинным ключом";
+            } else {
+                return "Возможно, шифр Виженера или другой полиалфавитный шифр";
+            }
+        }
+        
+        // Показ деталей анализа для конкретного ключа
+        function showKeyDetails(key) {
+            const ciphertext = prepareText(
+                document.getElementById('ciphertext').value,
+                document.getElementById('preserveCase').checked,
+                document.getElementById('preserveSpaces').checked
+            );
+            
+            showKeyAnalysis(key, ciphertext);
+            switchTab('analysis');
+            
+            // Подсвечиваем выбранный ключ
+            document.querySelectorAll('.key-info').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            
+            event.currentTarget.classList.add('highlight');
+        }
+        
+        // Анализ ключа
+        function showKeyAnalysis(key, ciphertext) {
+            const keyAnalysisDiv = document.getElementById('keyAnalysis');
+            const decrypted = decryptVigenere(ciphertext, key);
+            const keyLength = key.length;
+            
+            // Разбиваем текст на группы по ключу
+            const groups = Array(keyLength).fill().map(() => []);
+            for (let i = 0; i < ciphertext.length; i++) {
+                groups[i % keyLength].push(ciphertext[i]);
+            }
+            
+            let html = `
+                <div class="key-candidate">
+                    <p><strong>Анализ ключа:</strong> ${key} (длина: ${keyLength})</p>
+                    <p><strong>Расшифрованный текст:</strong> ${decrypted.substring(0, 100)}${decrypted.length > 100 ? '...' : ''}</p>
+                </div>
+                
+                <div class="analysis-section">
+                    <h4>Статистика по позициям ключа:</h4>
+                    <table class="stats-table">
+                        <tr>
+                            <th>Позиция</th>
+                            <th>Символ ключа</th>
+                            <th>Кол-во символов</th>
+                            <th>Топ-3 символа</th>
+                            <th>Предполагаемый сдвиг</th>
+                        </tr>
+            `;
+            
+            for (let i = 0; i < keyLength; i++) {
+                const group = groups[i];
+                const freqs = calculateFrequencies(group);
+                const sortedFreqs = Object.entries(freqs).sort((a, b) => b[1] - a[1]);
+                
+                const topChars = sortedFreqs.slice(0, 3).map(([char, freq]) => 
+                    `${char}: ${freq.toFixed(1)}%`).join(', ');
+                
+                // Определяем предполагаемый сдвиг
+                const bestShift = findBestShift(freqs);
+                const shiftChar = String.fromCharCode(
+                    bestShift + (currentLanguage === 'english' ? 65 : 1040)
+                );
+                
+                html += `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${key[i]}</td>
+                        <td>${group.length}</td>
+                        <td>${topChars}</td>
+                        <td>${bestShift} (${shiftChar})</td>
+                    </tr>
+                `;
+            }
+            
+            html += `
+                    </table>
+                </div>
+                
+                <div class="analysis-section">
+                    <h4>Проверка слов в расшифрованном тексте:</h4>
+            `;
+            
+            // Ищем известные слова в расшифрованном тексте
+            const foundWords = [];
+            const upperDecrypted = decrypted.toUpperCase();
+            
+            for (const word of currentFrequencies.commonWords) {
+                if (upperDecrypted.includes(word)) {
+                    foundWords.push(word);
+                }
+            }
+            
+            if (foundWords.length > 0) {
+                html += `<p>Найдены слова: ${foundWords.join(', ')}</p>`;
+            } else {
+                html += `<p>Не найдено ни одного из ${currentFrequencies.commonWords.length} распространенных слов</p>`;
+            }
+            
+            // Проверяем биграммы
+            const foundBigrams = [];
+            for (let i = 0; i < upperDecrypted.length - 1; i++) {
+                const bigram = upperDecrypted.substr(i, 2);
+                if (currentFrequencies.commonBigrams.includes(bigram) && !foundBigrams.includes(bigram)) {
+                    foundBigrams.push(bigram);
+                }
+            }
+            
+            html += `<p>Найдены биграммы: ${foundBigrams.length > 0 ? foundBigrams.join(', ') : 'нет'}</p>`;
+            
+            html += `</div>`;
+            
+            keyAnalysisDiv.innerHTML = html;
+        }
+        
+        // Инициализация при загрузке
+        window.onload = function() {
+            updateKeyLength();
+            updateMinKeyLength();
+            updateQualityThreshold();
+        };
     </script>
 </body>
 </html>
