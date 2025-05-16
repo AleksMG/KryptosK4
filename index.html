@@ -463,7 +463,7 @@
                         if (results.length > 0) {
                             const best = results[0];
                             document.getElementById('status').innerHTML = `
-                                <span class="success">Анализ завершен за ${((endTime - startTime)/1000).toFixed(2)} сек. Проверено ${results.length} вариантов.</span>
+                                <span class="success">Анализ завершен за ${((endTime - startTime)/10000).toFixed(2)} сек. Проверено ${results.length} вариантов.</span>
                             `;
                             
                             // Форматируем оригинальный текст с выделением ключа
