@@ -1,1192 +1,2251 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Продвинутый декодер шифра Виженера</title>
+    <title>K4 Advanced Cryptanalysis Suite</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --dark: #0a0a0a;
+            --light: #f8f9fa;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            max-width: 1000px;
+            background-color: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f9f9f9;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .container {
             background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        textarea {
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            color: var(--primary);
+            font-size: 2rem;
+        }
+        
+        h1, h2, h3, h4 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .tab:hover:not(.active) {
+            background-color: #f0f0f0;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        textarea, select, input {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-family: inherit;
             font-size: 16px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            transition: border 0.3s;
+        }
+        
+        textarea {
             min-height: 150px;
             resize: vertical;
         }
-        button {
-            background: #3498db;
+        
+        textarea:focus, select:focus, input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary);
             color: white;
             border: none;
-            padding: 12px 20px;
-            font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
-            width: 100%;
-            transition: background 0.3s;
-            margin-bottom: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
         }
-        button:hover {
-            background: #2980b9;
+        
+        .btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
         }
-        button.secondary {
-            background: #7f8c8d;
+        
+        .btn i {
+            margin-right: 5px;
         }
-        button.secondary:hover {
-            background: #6c7a7d;
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
         }
-        .result-area {
-            margin-top: 25px;
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .result-container {
+            margin-top: 30px;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             padding: 20px;
-            background: #f0f8ff;
-            border-radius: 4px;
-            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
         }
-        .settings {
-            margin: 20px 0;
+        
+        .result-card h3 {
+            margin-top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .result-card h3 .badge {
+            background-color: var(--info);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background-color: #f8f9fa;
             padding: 15px;
-            background: #f5f5f5;
             border-radius: 4px;
+            border: 1px solid #eee;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: auto;
         }
-        .error {
-            color: #e74c3c;
-            font-weight: bold;
+        
+        .table-responsive {
+            overflow-x: auto;
         }
-        .success {
-            color: #27ae60;
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
         }
-        .key-candidate {
-            margin: 10px 0;
-            padding: 10px;
-            background: #fff;
-            border-radius: 4px;
-            border: 1px solid #ddd;
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
         }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
         .progress-container {
             width: 100%;
-            background-color: #e0e0e0;
+            background-color: #e9ecef;
             border-radius: 4px;
-            margin: 10px 0;
-        }
-        .progress-bar {
+            margin-bottom: 20px;
             height: 20px;
-            background-color: #3498db;
+        }
+        
+        .progress-bar {
+            height: 100%;
             border-radius: 4px;
+            background-color: var(--primary);
             width: 0%;
             transition: width 0.3s;
-            text-align: center;
-            color: white;
-            font-size: 12px;
-            line-height: 20px;
         }
+        
+        .chart-container {
+            height: 300px;
+            margin-bottom: 30px;
+        }
+        
+        .keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .key {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .key:hover {
+            background-color: #e9ecef;
+        }
+        
+        .key.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .settings-panel {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
         .settings-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 20px;
             margin-bottom: 15px;
         }
-        .settings-group {
+        
+        .setting {
             flex: 1;
             min-width: 200px;
-            background: #eaf2f8;
-            padding: 10px;
-            border-radius: 4px;
         }
-        .settings-group h4 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        label {
+        
+        .setting label {
             display: block;
             margin-bottom: 5px;
+            font-weight: 500;
         }
-        input[type="range"] {
-            width: 100%;
-        }
-        select {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-        }
-        .key-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .key-info {
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .key-info:hover {
-            background: #eaf2f8;
-        }
-        .highlight {
-            background-color: #fffacd;
-        }
-        .analysis-section {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-        .tab-buttons {
+        
+        .histogram {
             display: flex;
-            margin-bottom: 15px;
+            height: 200px;
+            align-items: flex-end;
+            gap: 2px;
+            margin-top: 20px;
         }
-        .tab-button {
-            padding: 10px 15px;
-            background: #ddd;
-            border: none;
-            cursor: pointer;
-            margin-right: 5px;
-            border-radius: 4px 4px 0 0;
+        
+        .histogram-bar {
+            flex: 1;
+            background-color: var(--primary);
+            position: relative;
+            transition: height 0.3s;
         }
-        .tab-button.active {
-            background: #3498db;
-            color: white;
+        
+        .histogram-bar:hover {
+            background-color: var(--secondary);
         }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .stats-table {
+        
+        .histogram-label {
+            position: absolute;
+            bottom: -25px;
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+            text-align: center;
+            font-size: 12px;
         }
-        .stats-table th, .stats-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+        
+        .histogram-value {
+            position: absolute;
+            top: -25px;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
         }
-        .stats-table th {
-            background-color: #f2f2f2;
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted #777;
+            cursor: help;
         }
-        .stats-table tr:nth-child(even) {
-            background-color: #f9f9f9;
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .match-highlight {
+            background-color: rgba(40, 167, 69, 0.3);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1 0 auto;
+                text-align: center;
+                padding: 8px 5px;
+                font-size: 14px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .settings-row {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 Продвинутый декодер шифра Виженера</h1>
+        <header>
+            <div class="logo">
+                <i class="fas fa-lock"></i>
+                <h1>K4 Advanced Cryptanalysis Suite</h1>
+            </div>
+            <div>
+                <button class="btn btn-outline" onclick="showHelp()">
+                    <i class="fas fa-question-circle"></i> Help
+                </button>
+                <button class="btn btn-outline" onclick="showSettings()">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+        </header>
         
-        <div class="settings">
-            <h3>Настройки анализа</h3>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('analysis')">Full Analysis</div>
+            <div class="tab" onclick="switchTab('vigenere')">Vigenère Tools</div>
+            <div class="tab" onclick="switchTab('custom')">Custom Alphabet</div>
+            <div class="tab" onclick="switchTab('reports')">Reports</div>
+        </div>
+        
+        <!-- Full Analysis Tab -->
+        <div id="analysis" class="tab-content active">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> This tool performs comprehensive cryptanalysis on ciphertext using multiple methods including Kasiski examination, Friedman test, and frequency analysis.
+            </div>
+            
+            <div class="input-group">
+                <label for="ciphertext">Ciphertext (A-Z only):</label>
+                <textarea id="ciphertext" placeholder="Enter ciphertext here..."OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR</textarea>
+            </div>
+            
+            <div class="settings-panel">
+                <h3><i class="fas fa-sliders-h"></i> Analysis Settings</h3>
+                <div class="settings-row">
+                    <div class="setting">
+                        <label for="max-key-length">Max Key Length to Test:</label>
+                        <input type="number" id="max-key-length" min="1" max="50" value="20">
+                    </div>
+                    <div class="setting">
+                        <label for="target-words">Target Words (comma separated):</label>
+                        <input type="text" id="target-words" value="BERLIN,CLOCK,NORTHEAST,SOUTH">
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="setting">
+                        <label for="language-profile">Language Profile:</label>
+                        <select id="language-profile">
+                            <option value="english">English</option>
+                            <option value="german">German</option>
+                            <option value="french">French</option>
+                            <option value="spanish">Spanish</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="setting">
+                        <label for="analysis-depth">Analysis Depth:</label>
+                        <select id="analysis-depth">
+                            <option value="quick">Quick (faster, less thorough)</option>
+                            <option value="standard" selected>Standard</option>
+                            <option value="deep">Deep (slower, more thorough)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn" onclick="startFullAnalysis()">
+                    <i class="fas fa-play"></i> Start Full Analysis
+                </button>
+                <button class="btn btn-outline" onclick="clearResults()">
+                    <i class="fas fa-trash-alt"></i> Clear Results
+                </button>
+                <button class="btn btn-outline" onclick="saveAnalysis()">
+                    <i class="fas fa-save"></i> Save Analysis
+                </button>
+            </div>
+            
+            <div id="progress-container" class="progress-container" style="display: none;">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            
+            <div id="output" class="result-container"></div>
+        </div>
+        
+        <!-- Vigenère Tools Tab -->
+        <div id="vigenere" class="tab-content">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> This tool provides specialized functions for working with Vigenère cipher including encryption, decryption, and key testing.
+            </div>
+            
+            <div class="input-group">
+                <label for="vigenere-text">Text:</label>
+                <textarea id="vigenere-text" placeholder="Enter text here..."></textarea>
+            </div>
             
             <div class="settings-row">
-                <div class="settings-group">
-                    <h4>Параметры ключа</h4>
-                    <label>
-                        Максимальная длина ключа:
-                        <input type="range" id="keyLength" min="1" max="30" value="15" oninput="updateKeyLength()">
-                        <span id="keyLengthValue">15</span>
-                    </label>
-                    
-                    <label>
-                        Минимальная длина ключа:
-                        <input type="range" id="minKeyLength" min="1" max="15" value="1" oninput="updateMinKeyLength()">
-                        <span id="minKeyLengthValue">1</span>
-                    </label>
-                    
-                    <label>
-                        Метод анализа:
-                        <select id="analysisMethod">
-                            <option value="auto">Автоматический (частотный анализ)</option>
-                            <option value="bruteforce">Брутфорс (все возможные ключи)</option>
-                            <option value="known-length">Известная длина ключа</option>
-                        </select>
-                    </label>
+                <div class="setting">
+                    <label for="vigenere-key">Key:</label>
+                    <input type="text" id="vigenere-key" placeholder="Enter key...">
                 </div>
-                
-                <div class="settings-group">
-                    <h4>Параметры текста</h4>
-                    <label>
-                        Язык текста:
-                        <select id="language">
-                            <option value="english">Английский</option>
-                            <option value="russian">Русский</option>
-                        </select>
-                    </label>
-                    
-                    <label>
-                        Учитывать регистр:
-                        <input type="checkbox" id="preserveCase" checked>
-                    </label>
-                    
-                    <label>
-                        Сохранять пробелы и знаки:
-                        <input type="checkbox" id="preserveSpaces" checked>
-                    </label>
+                <div class="setting">
+                    <label for="vigenere-mode">Mode:</label>
+                    <select id="vigenere-mode">
+                        <option value="encrypt">Encrypt</option>
+                        <option value="decrypt">Decrypt</option>
+                    </select>
                 </div>
-                
-                <div class="settings-group">
-                    <h4>Дополнительные параметры</h4>
-                    <label>
-                        Максимальное число вариантов:
-                        <input type="number" id="maxResults" min="1" max="50" value="10">
-                    </label>
-                    
-                    <label>
-                        Порог качества:
-                        <input type="range" id="qualityThreshold" min="0" max="100" value="50">
-                        <span id="qualityThresholdValue">50</span>%
-                    </label>
+                <div class="setting">
+                    <label for="vigenere-alphabet">Alphabet:</label>
+                    <select id="vigenere-alphabet">
+                        <option value="standard">Standard (A-Z)</option>
+                        <option value="custom">Custom</option>
+                    </select>
                 </div>
             </div>
-        </div>
-
-        <textarea id="ciphertext" placeholder="Введите зашифрованный текст...">OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR</textarea>
-        
-        <button onclick="startAnalysis()">Запустить анализ</button>
-        <button class="secondary" onclick="stopAnalysis()" id="stopButton" disabled>Остановить анализ</button>
-        
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar">0%</div>
+            
+            <div id="custom-alphabet-container" style="display: none;">
+                <label for="custom-alphabet">Custom Alphabet:</label>
+                <input type="text" id="custom-alphabet" placeholder="ABCDEFGHIJKLMNOPQRSTUVWXYZ">
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn" onclick="processVigenere()">
+                    <i class="fas fa-cogs"></i> Process
+                </button>
+                <button class="btn btn-outline" onclick="testKeyVariations()">
+                    <i class="fas fa-key"></i> Test Key Variations
+                </button>
+                <button class="btn btn-outline" onclick="findLikelyKeyLength()">
+                    <i class="fas fa-ruler"></i> Find Key Length
+                </button>
+            </div>
+            
+            <div id="vigenere-output" class="result-container"></div>
         </div>
         
-        <div class="result-area">
-            <div class="tab-buttons">
-                <button class="tab-button active" onclick="switchTab('results')">Результаты</button>
-                <button class="tab-button" onclick="switchTab('analysis')">Анализ ключа</button>
-                <button class="tab-button" onclick="switchTab('stats')">Статистика</button>
+        <!-- Custom Alphabet Tab -->
+        <div id="custom" class="tab-content">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Create and manage custom alphabets for specialized cipher analysis.
             </div>
             
-            <div id="status">Готов к работе. Введите текст и нажмите "Запустить анализ".</div>
-            
-            <div id="results" class="tab-content active">
-                <h3>Лучшие варианты расшифровки:</h3>
-                <div id="result"></div>
-                <div id="candidates" class="key-grid"></div>
+            <div class="input-group">
+                <label for="alphabet-name">Alphabet Name:</label>
+                <input type="text" id="alphabet-name" placeholder="My Custom Alphabet">
             </div>
             
-            <div id="analysis" class="tab-content">
-                <h3>Анализ возможных ключей</h3>
-                <div id="keyAnalysis"></div>
+            <div class="input-group">
+                <label for="alphabet-chars">Characters (in order):</label>
+                <textarea id="alphabet-chars" placeholder="ABCDEFGHIJKLMNOPQRSTUVWXYZ"></textarea>
             </div>
             
-            <div id="stats" class="tab-content">
-                <h3>Статистика текста</h3>
-                <div id="textStats"></div>
+            <div class="input-group">
+                <label>Character Frequency (optional):</label>
+                <div id="frequency-editor">
+                    <p>Enter frequency percentages for each character (must sum to 100%):</p>
+                    <div id="frequency-inputs"></div>
+                </div>
             </div>
+            
+            <div class="btn-group">
+                <button class="btn" onclick="saveCustomAlphabet()">
+                    <i class="fas fa-save"></i> Save Alphabet
+                </button>
+                <button class="btn btn-outline" onclick="loadCustomAlphabet()">
+                    <i class="fas fa-folder-open"></i> Load Alphabet
+                </button>
+                <button class="btn btn-outline" onclick="testCustomAlphabet()">
+                    <i class="fas fa-vial"></i> Test Alphabet
+                </button>
+            </div>
+            
+            <div id="custom-alphabet-output" class="result-container"></div>
+        </div>
+        
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Generate detailed reports of your analysis sessions.
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn" onclick="generateFullReport()">
+                    <i class="fas fa-file-alt"></i> Generate Full Report
+                </button>
+                <button class="btn btn-outline" onclick="exportToCSV()">
+                    <i class="fas fa-file-csv"></i> Export to CSV
+                </button>
+                <button class="btn btn-outline" onclick="exportToJSON()">
+                    <i class="fas fa-file-code"></i> Export to JSON
+                </button>
+            </div>
+            
+            <div id="report-output" class="result-container"></div>
         </div>
     </div>
-
-    <script>
-        // Частотность букв в разных языках
-        const languageFrequencies = {
-            english: {
-                name: "Английский",
-                frequencies: {
-                    'A': 8.167, 'B': 1.492, 'C': 2.782, 'D': 4.253, 'E': 12.702,
-                    'F': 2.228, 'G': 2.015, 'H': 6.094, 'I': 6.966, 'J': 0.153,
-                    'K': 0.772, 'L': 4.025, 'M': 2.406, 'N': 6.749, 'O': 7.507,
-                    'P': 1.929, 'Q': 0.095, 'R': 5.987, 'S': 6.327, 'T': 9.056,
-                    'U': 2.758, 'V': 0.978, 'W': 2.360, 'X': 0.150, 'Y': 1.974,
-                    'Z': 0.074
-                },
-                commonBigrams: [
-                    'EAST', 'ESTNORTH', 'NORTH', 'BERLIN', 'CLOCK'
-                ],
-                commonTrigrams: [
-                    'THEBERLIN', 'EAST', 'NORTHEST', 'NORTH', 'BERLIN', 'CLOCK'
-                ],
-                commonWords: [
-                    'THECLOK', 'BERLINCLOCK', 'EAST', 'ESTNORTH', 'NORTH', 'BERLIN', 'CLOCK'
-                ]
-            },
-            russian: {
-                name: "Русский",
-                frequencies: {
-                    'А': 8.01, 'Б': 1.59, 'В': 4.54, 'Г': 1.70, 'Д': 2.98,
-                    'Е': 8.45, 'Ё': 0.04, 'Ж': 0.94, 'З': 1.65, 'И': 7.35,
-                    'Й': 1.21, 'К': 3.49, 'Л': 4.40, 'М': 3.21, 'Н': 6.70,
-                    'О': 10.97, 'П': 2.81, 'Р': 4.73, 'С': 5.47, 'Т': 6.26,
-                    'У': 2.62, 'Ф': 0.26, 'Х': 0.97, 'Ц': 0.48, 'Ч': 1.44,
-                    'Ш': 0.73, 'Щ': 0.36, 'Ъ': 0.04, 'Ы': 1.90, 'Ь': 1.74,
-                    'Э': 0.32, 'Ю': 0.64, 'Я': 2.01
-                },
-                commonBigrams: [
-                    'СТ', 'НО', 'ЕН', 'ТО', 'НА', 'ОВ', 'НИ', 'РА',
-                    'ВО', 'КО', 'ЕЛ', 'РО', 'ОЛ', 'ТЕ', 'ЛЬ', 'НЕ'
-                ],
-                commonTrigrams: [
-                    'СТО', 'ЕНО', 'НОВ', 'ТОВ', 'ОВО', 'ОВА', 'ЕНИ', 'РАЗ',
-                    'ПРО', 'ГОД', 'РОД', 'КОТ', 'ОРО', 'ТАК', 'ОГО', 'ТОР'
-                ],
-                commonWords: [
-                    'И', 'В', 'НЕ', 'НА', 'Я', 'БЫТЬ', 'ОН', 'С',
-                    'ЧТО', 'А', 'ЭТО', 'ВЕСЬ', 'ОНА', 'ПО', 'НО', 'ОНИ',
-                    'К', 'У', 'ТЫ', 'ЕГО', 'ЗА', 'ИЗ', 'МЫ', 'ВЫ'
-                ]
-            }
-        };
-
-        // Глобальные переменные для управления процессом анализа
-        let isAnalyzing = false;
-        let stopRequested = false;
-        let currentLanguage = 'english';
-        let currentFrequencies = languageFrequencies.english;
-        
-        // Обновляем отображение длины ключа
-        function updateKeyLength() {
-            const slider = document.getElementById('keyLength');
-            const display = document.getElementById('keyLengthValue');
-            display.textContent = slider.value;
+    
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('helpModal')">&times;</span>
+            <h2>K4 Advanced Cryptanalysis Suite Help</h2>
+            <h3>Full Analysis Tab</h3>
+            <p>This tab performs comprehensive cryptanalysis on your ciphertext using multiple methods:</p>
+            <ul>
+                <li><strong>Kasiski Examination:</strong> Estimates the likely key length by finding repeated sequences</li>
+                <li><strong>Friedman Test:</strong> Calculates the index of coincidence to help determine if the text is likely to be encrypted with a polyalphabetic cipher</li>
+                <li><strong>Frequency Analysis:</strong> Shows character distribution compared to expected language frequencies</li>
+                <li><strong>Key Testing:</strong> Tests various keys and scores the decrypted text based on language patterns and target words</li>
+            </ul>
             
-            // Обновляем максимальное значение минимальной длины
-            const minSlider = document.getElementById('minKeyLength');
-            minSlider.max = slider.value;
-            if (parseInt(minSlider.value) > parseInt(slider.value)) {
-                minSlider.value = slider.value;
-                document.getElementById('minKeyLengthValue').textContent = slider.value;
-            }
-        }
+            <h3>Vigenère Tools Tab</h3>
+            <p>Specialized tools for working with the Vigenère cipher:</p>
+            <ul>
+                <li><strong>Encrypt/Decrypt:</strong> Process text with a given key</li>
+                <li><strong>Key Testing:</strong> Test variations of a key to find the most likely decryption</li>
+                <li><strong>Key Length Finder:</strong> Estimate the key length using statistical methods</li>
+            </ul>
+            
+            <h3>Custom Alphabet Tab</h3>
+            <p>Create and manage custom alphabets for specialized cipher analysis.</p>
+            
+            <h3>Reports Tab</h3>
+            <p>Generate detailed reports of your analysis sessions in various formats.</p>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('settingsModal')">&times;</span>
+            <h2>Application Settings</h2>
+            
+            <div class="settings-panel">
+                <h3><i class="fas fa-chart-bar"></i> Analysis Settings</h3>
+                <div class="setting">
+                    <label for="max-results">Maximum Results to Display:</label>
+                    <input type="number" id="max-results" min="5" max="100" value="10">
+                </div>
+                <div class="setting">
+                    <label for="auto-save">Auto-save Analysis:</label>
+                    <select id="auto-save">
+                        <option value="true">Enabled</option>
+                        <option value="false">Disabled</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="settings-panel">
+                <h3><i class="fas fa-paint-brush"></i> UI Settings</h3>
+                <div class="setting">
+                    <label for="theme">Color Theme:</label>
+                    <select id="theme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="blue">Blue</option>
+                        <option value="high-contrast">High Contrast</option>
+                    </select>
+                </div>
+                <div class="setting">
+                    <label for="font-size">Font Size:</label>
+                    <select id="font-size">
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="saveSettings()">
+                <i class="fas fa-save"></i> Save Settings
+            </button>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Global variables
+        let analysisHistory = [];
+        let customAlphabets = {};
+        let currentAnalysis = null;
         
-        function updateMinKeyLength() {
-            const slider = document.getElementById('minKeyLength');
-            const display = document.getElementById('minKeyLengthValue');
-            display.textContent = slider.value;
-        }
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved data
+            loadSavedData();
+            
+            // Set up event listeners
+            document.getElementById('vigenere-alphabet').addEventListener('change', function() {
+                document.getElementById('custom-alphabet-container').style.display = 
+                    this.value === 'custom' ? 'block' : 'none';
+            });
+            
+            document.getElementById('alphabet-chars').addEventListener('input', function() {
+                updateFrequencyInputs();
+            });
+            
+            // Initialize frequency inputs
+            updateFrequencyInputs();
+        });
         
-        function updateQualityThreshold() {
-            const slider = document.getElementById('qualityThreshold');
-            const display = document.getElementById('qualityThresholdValue');
-            display.textContent = slider.value;
-        }
-        
-        // Переключение между вкладками
-        function switchTab(tabName) {
+        // Tab switching
+        function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active');
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
             });
             
-            document.getElementById(tabName).classList.add('active');
-            document.querySelector(`.tab-button[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
         }
         
-        // Основная функция запуска анализа
-        function startAnalysis() {
-            if (isAnalyzing) return;
+        // Modal functions
+        function showHelp() {
+            document.getElementById('helpModal').style.display = 'block';
+        }
+        
+        function showSettings() {
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        
+        // Analysis functions
+        class K4Analyzer {
+            constructor() {
+                this.languageProfiles = {
+                    english: {
+                        name: "English",
+                        frequencies: {
+                            'E': 12.70, 'T': 9.10, 'A': 8.20, 'O': 7.50, 'I': 6.90,
+                            'N': 6.70, 'S': 6.30, 'H': 6.10, 'R': 6.00, 'D': 4.30,
+                            'L': 4.00, 'C': 2.80, 'U': 2.80, 'M': 2.40, 'W': 2.40,
+                            'F': 2.20, 'G': 2.00, 'Y': 2.00, 'P': 1.90, 'B': 1.50,
+                            'V': 0.98, 'K': 0.77, 'J': 0.15, 'X': 0.15, 'Q': 0.10,
+                            'Z': 0.07
+                        },
+                        commonWords: ["THE", "AND", "FOR", "ARE", "BUT", "NOT", "YOU", "ALL", "ANY", "CAN"]
+                    },
+                    german: {
+                        name: "German",
+                        frequencies: {
+                            'E': 16.93, 'N': 10.53, 'I': 8.02, 'S': 7.27, 'R': 6.89,
+                            'A': 6.51, 'T': 5.79, 'D': 5.08, 'H': 4.76, 'U': 4.35,
+                            'L': 3.44, 'C': 3.06, 'G': 3.01, 'M': 2.53, 'O': 2.51,
+                            'B': 1.89, 'W': 1.78, 'F': 1.66, 'K': 1.21, 'Z': 1.13,
+                            'P': 0.79, 'V': 0.67, 'J': 0.27, 'Y': 0.04, 'X': 0.03,
+                            'Q': 0.02
+                        },
+                        commonWords: ["DER", "DIE", "UND", "IN", "DEN", "VON", "ZU", "MIT", "SICH", "DES"]
+                    },
+                    french: {
+                        name: "French",
+                        frequencies: {
+                            'E': 15.10, 'A': 8.13, 'I': 7.11, 'S': 7.08, 'N': 6.94,
+                            'T': 6.51, 'R': 6.16, 'U': 5.74, 'L': 5.50, 'O': 5.38,
+                            'D': 3.67, 'C': 3.26, 'M': 2.96, 'P': 2.92, 'V': 1.64,
+                            'Q': 1.43, 'F': 1.12, 'B': 0.96, 'G': 0.92, 'H': 0.85,
+                            'J': 0.71, 'X': 0.51, 'Y': 0.46, 'Z': 0.32, 'K': 0.07,
+                            'W': 0.04
+                        },
+                        commonWords: ["LE", "LA", "ET", "LES", "DES", "UN", "UNE", "EST", "POUR", "QUE"]
+                    },
+                    spanish: {
+                        name: "Spanish",
+                        frequencies: {
+                            'E': 13.72, 'A': 12.53, 'O': 8.68, 'S': 7.98, 'R': 6.87,
+                            'N': 6.71, 'I': 6.25, 'D': 5.86, 'L': 4.97, 'C': 4.68,
+                            'T': 4.63, 'U': 3.93, 'M': 3.15, 'P': 2.51, 'B': 1.42,
+                            'H': 1.08, 'Q': 1.01, 'V': 0.90, 'G': 0.89, 'F': 0.69,
+                            'Y': 0.69, 'J': 0.52, 'Z': 0.47, 'X': 0.14, 'K': 0.02,
+                            'W': 0.01
+                        },
+                        commonWords: ["EL", "LA", "LOS", "LAS", "UN", "UNA", "ES", "DEL", "QUE", "Y"]
+                    }
+                };
+            }
             
-            // Очищаем предыдущие результаты
-            document.getElementById('result').innerHTML = '';
-            document.getElementById('candidates').innerHTML = '';
-            document.getElementById('keyAnalysis').innerHTML = '';
-            document.getElementById('textStats').innerHTML = '';
-            document.getElementById('progressBar').style.width = '0%';
-            document.getElementById('progressBar').textContent = '0%';
+            // Clean and validate input
+            cleanInput(text, alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+                const regex = new RegExp(`[^${alphabet}]`, 'gi');
+                return text.toUpperCase().replace(regex, '');
+            }
             
-            // Получаем настройки
-            const maxKeyLength = parseInt(document.getElementById('keyLength').value);
-            const minKeyLength = parseInt(document.getElementById('minKeyLength').value);
-            const analysisMethod = document.getElementById('analysisMethod').value;
-            const maxResults = parseInt(document.getElementById('maxResults').value);
-            const qualityThreshold = parseInt(document.getElementById('qualityThreshold').value) / 100;
-            currentLanguage = document.getElementById('language').value;
-            currentFrequencies = languageFrequencies[currentLanguage];
+            // Kasiski examination to find likely key length
+            kasiskiAnalysis(text, maxKeyLength = 20) {
+                // Find all repeated sequences of 3 or more characters
+                const sequences = {};
+                for (let len = 3; len <= 5; len++) {
+                    for (let i = 0; i <= text.length - len; i++) {
+                        const seq = text.substr(i, len);
+                        if (sequences[seq]) {
+                            sequences[seq].push(i);
+                        } else {
+                            sequences[seq] = [i];
+                        }
+                    }
+                }
+                
+                // Filter sequences that appear at least twice
+                const repeatedSequences = Object.entries(sequences)
+                    .filter(([seq, positions]) => positions.length > 1)
+                    .map(([seq, positions]) => ({
+                        sequence: seq,
+                        positions: positions,
+                        distances: []
+                    }));
+                
+                // Calculate distances between repeated sequences
+                for (const seq of repeatedSequences) {
+                    const positions = seq.positions;
+                    for (let i = 1; i < positions.length; i++) {
+                        seq.distances.push(positions[i] - positions[i - 1]);
+                    }
+                }
+                
+                // Find factors of distances
+                const factorCounts = {};
+                for (const seq of repeatedSequences) {
+                    for (const distance of seq.distances) {
+                        for (let i = 2; i <= Math.min(distance, maxKeyLength); i++) {
+                            if (distance % i === 0) {
+                                factorCounts[i] = (factorCounts[i] || 0) + 1;
+                            }
+                        }
+                    }
+                }
+                
+                // Find the most common factors
+                const sortedFactors = Object.entries(factorCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([factor, count]) => ({
+                        length: parseInt(factor),
+                        count: count,
+                        confidence: count / repeatedSequences.length
+                    }));
+                
+                return {
+                    method: "Kasiski Examination",
+                    likelyKeyLengths: sortedFactors.slice(0, 5),
+                    repeatedSequences: repeatedSequences,
+                    details: {
+                        totalRepeatedSequences: repeatedSequences.length,
+                        averageDistance: repeatedSequences.reduce((sum, seq) => 
+                            sum + seq.distances.reduce((s, d) => s + d, 0) / 
+                            seq.distances.length, 0) / repeatedSequences.length
+                    }
+                };
+            }
             
-            // Получаем и очищаем текст
-            let ciphertext = document.getElementById('ciphertext').value;
-            const preserveCase = document.getElementById('preserveCase').checked;
-            const preserveSpaces = document.getElementById('preserveSpaces').checked;
+            // Friedman test to calculate index of coincidence
+            friedmanTest(text, alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+                const n = text.length;
+                if (n < 2) return 0;
+                
+                // Calculate character frequencies
+                const freq = {};
+                for (const c of alphabet) freq[c] = 0;
+                for (const c of text) freq[c]++;
+                
+                // Calculate index of coincidence
+                let sum = 0;
+                for (const c of alphabet) {
+                    sum += freq[c] * (freq[c] - 1);
+                }
+                
+                const ic = sum / (n * (n - 1));
+                const ki = (ic - 1/alphabet.length) * alphabet.length / (n - 1);
+                
+                return {
+                    method: "Friedman Test",
+                    indexOfCoincidence: ic,
+                    kappaPlaintext: ki,
+                    expectedIC: {
+                        random: 1/alphabet.length,
+                        english: 0.0667,
+                        french: 0.0778,
+                        german: 0.0762,
+                        spanish: 0.0770
+                    },
+                    interpretation: this.interpretIC(ic, alphabet.length)
+                };
+            }
             
-            if (!ciphertext) {
-                document.getElementById('status').innerHTML = '<span class="error">Введите текст для анализа!</span>';
+            interpretIC(ic, alphabetSize) {
+                const randomIC = 1 / alphabetSize;
+                if (Math.abs(ic - randomIC) < 0.01) {
+                    return "Likely random text or very strong cipher";
+                } else if (ic > 0.06) {
+                    return "Consistent with natural language (monoalphabetic substitution or weak polyalphabetic cipher)";
+                } else {
+                    return "Possible polyalphabetic cipher with longer key";
+                }
+            }
+            
+            // Frequency analysis
+            frequencyAnalysis(text, language = 'english', alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+                // Calculate observed frequencies
+                const freq = {};
+                for (const c of alphabet) freq[c] = 0;
+                for (const c of text) freq[c]++;
+                
+                // Convert to percentages
+                const total = text.length;
+                const observed = Object.entries(freq)
+                    .map(([char, count]) => ({
+                        char,
+                        count,
+                        percent: (count / total) * 100
+                    }))
+                    .sort((a, b) => b.percent - a.percent);
+                
+                // Get expected frequencies for the language
+                const expected = this.languageProfiles[language]?.frequencies || 
+                               this.languageProfiles.english.frequencies;
+                
+                const expectedSorted = Object.entries(expected)
+                    .map(([char, percent]) => ({ char, percent }))
+                    .sort((a, b) => b.percent - a.percent);
+                
+                // Calculate chi-squared statistic
+                let chiSquared = 0;
+                for (const obs of observed) {
+                    const expPercent = expected[obs.char] || 0;
+                    const expectedCount = (expPercent / 100) * total;
+                    if (expectedCount > 0) {
+                        chiSquared += Math.pow(obs.count - expectedCount, 2) / expectedCount;
+                    }
+                }
+                
+                return {
+                    method: "Frequency Analysis",
+                    language: this.languageProfiles[language]?.name || "English",
+                    observed: observed,
+                    expected: expectedSorted,
+                    chiSquared: chiSquared,
+                    chiSquaredPerChar: chiSquared / alphabet.length,
+                    interpretation: this.interpretChiSquared(chiSquared, alphabet.length)
+                };
+            }
+            
+            interpretChiSquared(chiSquared, degreesOfFreedom) {
+                const ratio = chiSquared / degreesOfFreedom;
+                if (ratio < 0.5) {
+                    return "Very close match to expected frequencies";
+                } else if (ratio < 1.5) {
+                    return "Reasonable match to expected frequencies";
+                } else if (ratio < 3.0) {
+                    return "Some deviation from expected frequencies";
+                } else {
+                    return "Significant deviation from expected frequencies";
+                }
+            }
+            
+            // Vigenère decryption
+            decrypt(text, key, alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+                let result = '';
+                const alphaLen = alphabet.length;
+                
+                for (let i = 0; i < text.length; i++) {
+                    const textChar = text[i];
+                    const keyChar = key[i % key.length];
+                    
+                    const textPos = alphabet.indexOf(textChar);
+                    const keyPos = alphabet.indexOf(keyChar);
+                    
+                    if (textPos === -1) {
+                        result += textChar; // Leave non-alphabet chars as-is
+                        continue;
+                    }
+                    
+                    const newPos = (textPos - keyPos + alphaLen) % alphaLen;
+                    result += alphabet[newPos];
+                }
+                
+                return result;
+            }
+            
+            // Vigenère encryption
+            encrypt(text, key, alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+                let result = '';
+                const alphaLen = alphabet.length;
+                
+                for (let i = 0; i < text.length; i++) {
+                    const textChar = text[i];
+                    const keyChar = key[i % key.length];
+                    
+                    const textPos = alphabet.indexOf(textChar);
+                    const keyPos = alphabet.indexOf(keyChar);
+                    
+                    if (textPos === -1) {
+                        result += textChar; // Leave non-alphabet chars as-is
+                        continue;
+                    }
+                    
+                    const newPos = (textPos + keyPos) % alphaLen;
+                    result += alphabet[newPos];
+                }
+                
+                return result;
+            }
+            
+            // Score decrypted text based on language patterns
+            scoreDecryption(decrypted, language = 'english', targetWords = []) {
+                // Frequency score
+                const freqAnalysis = this.frequencyAnalysis(decrypted, language);
+                let score = 100 - Math.min(freqAnalysis.chiSquaredPerChar * 10, 100);
+                
+                // Common words score
+                const commonWords = this.languageProfiles[language]?.commonWords || 
+                                  this.languageProfiles.english.commonWords;
+                
+                let commonWordCount = 0;
+                for (const word of commonWords) {
+                    if (decrypted.includes(word)) {
+                        commonWordCount++;
+                    }
+                }
+                score += commonWordCount * 5;
+                
+                // Target words score
+                let targetWordScore = 0;
+                for (const word of targetWords) {
+                    if (decrypted.includes(word.toUpperCase())) {
+                        targetWordScore += 20;
+                    }
+                }
+                score += targetWordScore;
+                
+                // Bigram and trigram scoring
+                const commonBigrams = ["TH", "HE", "IN", "ER", "AN", "RE", "ND", "AT", "ON", "NT"];
+                const commonTrigrams = ["THE", "AND", "THA", "ENT", "ING", "ION", "TIO", "FOR", "NDE", "HAS"];
+                
+                let bigramScore = 0;
+                let trigramScore = 0;
+                
+                for (let i = 0; i < decrypted.length - 1; i++) {
+                    const bigram = decrypted.substr(i, 2);
+                    if (commonBigrams.includes(bigram)) bigramScore += 0.5;
+                }
+                
+                for (let i = 0; i < decrypted.length - 2; i++) {
+                    const trigram = decrypted.substr(i, 3);
+                    if (commonTrigrams.includes(trigram)) trigramScore += 1;
+                }
+                
+                score += bigramScore + trigramScore;
+                
+                return {
+                    score: Math.round(score),
+                    components: {
+                        frequencyScore: 100 - Math.min(freqAnalysis.chiSquaredPerChar * 10, 100),
+                        commonWordScore: commonWordCount * 5,
+                        targetWordScore: targetWordScore,
+                        bigramScore: Math.round(bigramScore),
+                        trigramScore: Math.round(trigramScore)
+                    }
+                };
+            }
+            
+            // Generate likely keys based on analysis
+            generateKeys(text, keyLength, language = 'english', targetWords = []) {
+                const keys = new Set();
+                const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                
+                // Add target words if they match key length
+                for (const word of targetWords) {
+                    if (word.length === keyLength) {
+                        keys.add(word.toUpperCase());
+                    }
+                }
+                
+                // Add common prefixes/suffixes
+                const commonPrefixes = ["RE", "UN", "PRE", "OVER", "UNDER"];
+                const commonSuffixes = ["ING", "TION", "MENT", "NESS", "ABLE"];
+                
+                if (keyLength >= 3) {
+                    for (const prefix of commonPrefixes) {
+                        if (prefix.length <= keyLength) {
+                            let key = prefix;
+                            while (key.length < keyLength) {
+                                key += alphabet[Math.floor(Math.random() * alphabet.length)];
+                            }
+                            keys.add(key.toUpperCase());
+                        }
+                    }
+                    
+                    for (const suffix of commonSuffixes) {
+                        if (suffix.length <= keyLength) {
+                            let key = '';
+                            while (key.length + suffix.length < keyLength) {
+                                key += alphabet[Math.floor(Math.random() * alphabet.length)];
+                            }
+                            key += suffix;
+                            keys.add(key.toUpperCase());
+                        }
+                    }
+                }
+                
+                // Add some random keys
+                for (let i = 0; i < 50; i++) {
+                    let key = '';
+                    for (let j = 0; j < keyLength; j++) {
+                        key += alphabet[Math.floor(Math.random() * alphabet.length)];
+                    }
+                    keys.add(key);
+                }
+                
+                return Array.from(keys);
+            }
+            
+            // Full analysis combining all methods
+            fullAnalysis(text, options = {}) {
+                const {
+                    maxKeyLength = 20,
+                    language = 'english',
+                    targetWords = [],
+                    depth = 'standard'
+                } = options;
+                
+                // Clean input
+                const cleanedText = this.cleanInput(text);
+                
+                // Perform analyses
+                const kasiski = this.kasiskiAnalysis(cleanedText, maxKeyLength);
+                const friedman = this.friedmanTest(cleanedText);
+                const freqAnalysis = this.frequencyAnalysis(cleanedText, language);
+                
+                // Determine likely key lengths to test
+                const likelyKeyLengths = [...new Set([
+                    kasiski.likelyKeyLengths[0]?.length || 1,
+                    kasiski.likelyKeyLengths[1]?.length || 1,
+                    Math.round(1 / (friedman.kappaPlaintext || 1))
+                ].filter(l => l > 0 && l <= maxKeyLength))];
+                
+                // Generate and test keys
+                const testResults = [];
+                for (const keyLength of likelyKeyLengths) {
+                    const keys = this.generateKeys(cleanedText, keyLength, language, targetWords);
+                    
+                    for (const key of keys) {
+                        const decrypted = this.decrypt(cleanedText, key);
+                        const score = this.scoreDecryption(decrypted, language, targetWords);
+                        
+                        testResults.push({
+                            key,
+                            keyLength,
+                            decrypted,
+                            score: score.score,
+                            scoreComponents: score.components
+                        });
+                    }
+                }
+                
+                // Sort results by score
+                testResults.sort((a, b) => b.score - a.score);
+                
+                return {
+                    kasiskiAnalysis: kasiski,
+                    friedmanTest: friedman,
+                    frequencyAnalysis: freqAnalysis,
+                    testResults: testResults,
+                    topResults: testResults.slice(0, 10),
+                    likelyKeyLengths: likelyKeyLengths,
+                    input: {
+                        original: text,
+                        cleaned: cleanedText,
+                        length: cleanedText.length
+                    },
+                    options: options
+                };
+            }
+        }
+        
+        // UI Functions
+        function startFullAnalysis() {
+            const input = document.getElementById('ciphertext').value;
+            const maxKeyLength = parseInt(document.getElementById('max-key-length').value) || 20;
+            const targetWords = document.getElementById('target-words').value
+                .split(',')
+                .map(w => w.trim())
+                .filter(w => w.length > 0);
+            const language = document.getElementById('language-profile').value;
+            const depth = document.getElementById('analysis-depth').value;
+            
+            const analyzer = new K4Analyzer();
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+            
+            // Show progress bar
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            
+            // Simulate progress (in a real app, this would be actual progress)
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(progressInterval);
+                }
+                progressBar.style.width = `${progress}%`;
+            }, 200);
+            
+            // Run analysis (with slight delay to show progress)
+            setTimeout(() => {
+                try {
+                    const results = analyzer.fullAnalysis(input, {
+                        maxKeyLength,
+                        language,
+                        targetWords,
+                        depth
+                    });
+                    
+                    currentAnalysis = results;
+                    displayAnalysisResults(results);
+                    analysisHistory.push(results);
+                    saveAnalysisHistory();
+                    
+                    // Hide progress bar
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                    }, 500);
+                } catch (error) {
+                    output.innerHTML = `<div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Error during analysis: ${error.message}
+                    </div>`;
+                    progressContainer.style.display = 'none';
+                }
+            }, 1000);
+        }
+        
+        function displayAnalysisResults(results) {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+            
+            // Summary card
+            output.innerHTML += `
+                <div class="result-card">
+                    <h3>Analysis Summary</h3>
+                    <p><strong>Input length:</strong> ${results.input.length} characters</p>
+                    <p><strong>Language profile:</strong> ${results.frequencyAnalysis.language}</p>
+                    <p><strong>Most likely key lengths:</strong> ${results.likelyKeyLengths.join(', ')}</p>
+                    <p><strong>Index of Coincidence:</strong> ${results.friedmanTest.indexOfCoincidence.toFixed(4)} 
+                        (${results.friedmanTest.interpretation})</p>
+                    <p><strong>Chi-squared statistic:</strong> ${results.frequencyAnalysis.chiSquared.toFixed(2)} 
+                        (${results.frequencyAnalysis.interpretation})</p>
+                </div>
+            `;
+            
+            // Kasiski results
+            output.innerHTML += `
+                <div class="result-card">
+                    <h3>Kasiski Examination <span class="badge">Key Length Analysis</span></h3>
+                    <p>This method looks for repeated sequences in the ciphertext to estimate the key length.</p>
+                    
+                    <h4>Most Likely Key Lengths</h4>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Key Length</th>
+                                    <th>Sequence Matches</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${results.kasiskiAnalysis.likelyKeyLengths.map(len => `
+                                    <tr>
+                                        <td>${len.length}</td>
+                                        <td>${len.count}</td>
+                                        <td>${(len.confidence * 100).toFixed(1)}%</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h4>Repeated Sequences</h4>
+                    <p>Found ${results.kasiskiAnalysis.repeatedSequences.length} repeated sequences:</p>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Sequence</th>
+                                    <th>Positions</th>
+                                    <th>Distances</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${results.kasiskiAnalysis.repeatedSequences.slice(0, 20).map(seq => `
+                                    <tr>
+                                        <td><code>${seq.sequence}</code></td>
+                                        <td>${seq.positions.join(', ')}</td>
+                                        <td>${seq.distances.join(', ')}</td>
+                                    </tr>
+                                `).join('')}
+                                ${results.kasiskiAnalysis.repeatedSequences.length > 20 ? `
+                                    <tr>
+                                        <td colspan="3">... and ${results.kasiskiAnalysis.repeatedSequences.length - 20} more</td>
+                                    </tr>
+                                ` : ''}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            // Friedman test results
+            output.innerHTML += `
+                <div class="result-card">
+                    <h3>Friedman Test <span class="badge">Index of Coincidence</span></h3>
+                    <p>This method calculates the probability that two randomly selected letters are the same.</p>
+                    
+                    <div class="chart-container">
+                        <canvas id="icChart"></canvas>
+                    </div>
+                    
+                    <p><strong>Calculated Index of Coincidence:</strong> ${results.friedmanTest.indexOfCoincidence.toFixed(4)}</p>
+                    <p><strong>Kappa Plaintext:</strong> ${results.friedmanTest.kappaPlaintext.toFixed(4)}</p>
+                    <p><strong>Interpretation:</strong> ${results.friedmanTest.interpretation}</p>
+                    
+                    <h4>Expected Values for Comparison</h4>
+                    <ul>
+                        <li>Random text: ${results.friedmanTest.expectedIC.random.toFixed(4)}</li>
+                        <li>English: ${results.friedmanTest.expectedIC.english.toFixed(4)}</li>
+                        <li>French: ${results.friedmanTest.expectedIC.french.toFixed(4)}</li>
+                        <li>German: ${results.friedmanTest.expectedIC.german.toFixed(4)}</li>
+                        <li>Spanish: ${results.friedmanTest.expectedIC.spanish.toFixed(4)}</li>
+                    </ul>
+                </div>
+            `;
+            
+            // Frequency analysis results
+            output.innerHTML += `
+                <div class="result-card">
+                    <h3>Frequency Analysis <span class="badge">Character Distribution</span></h3>
+                    <p>This compares the frequency of letters in the ciphertext to expected frequencies in ${results.frequencyAnalysis.language}.</p>
+                    
+                    <div class="chart-container">
+                        <canvas id="freqChart"></canvas>
+                    </div>
+                    
+                    <h4>Top Characters</h4>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Character</th>
+                                    <th>Count</th>
+                                    <th>Percentage</th>
+                                    <th>Expected</th>
+                                    <th>Difference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${results.frequencyAnalysis.observed.slice(0, 10).map(char => {
+                                    const expected = results.frequencyAnalysis.expected.find(e => e.char === char.char)?.percent || 0;
+                                    return `
+                                        <tr>
+                                            <td>${char.char}</td>
+                                            <td>${char.count}</td>
+                                            <td>${char.percent.toFixed(2)}%</td>
+                                            <td>${expected.toFixed(2)}%</td>
+                                            <td>${(char.percent - expected).toFixed(2)}%</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <p><strong>Chi-squared statistic:</strong> ${results.frequencyAnalysis.chiSquared.toFixed(2)}</p>
+                    <p><strong>Interpretation:</strong> ${results.frequencyAnalysis.interpretation}</p>
+                </div>
+            `;
+            
+            // Test results
+            output.innerHTML += `
+                <div class="result-card">
+                    <h3>Decryption Attempts <span class="badge">Top Results</span></h3>
+                    <p>These are the highest scoring decryption attempts based on the analysis.</p>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Key</th>
+                                    <th>Key Length</th>
+                                    <th>Score</th>
+                                    <th>Decrypted Text</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${results.topResults.map((result, i) => `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        <td><strong>${result.key}</strong></td>
+                                        <td>${result.keyLength}</td>
+                                        <td>${result.score}</td>
+                                        <td><code>${result.decrypted.substring(0, 50)}${result.decrypted.length > 50 ? '...' : ''}</code></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <button class="btn" onclick="showDetailedResults()">
+                        <i class="fas fa-search-plus"></i> Show Detailed Results
+                    </button>
+                </div>
+            `;
+            
+            // Render charts
+            renderCharts(results);
+        }
+        
+        function renderCharts(results) {
+            // IC Comparison Chart
+            const icCtx = document.getElementById('icChart').getContext('2d');
+            new Chart(icCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Your Text', 'Random', 'English', 'French', 'German', 'Spanish'],
+                    datasets: [{
+                        label: 'Index of Coincidence',
+                        data: [
+                            results.friedmanTest.indexOfCoincidence,
+                            results.friedmanTest.expectedIC.random,
+                            results.friedmanTest.expectedIC.english,
+                            results.friedmanTest.expectedIC.french,
+                            results.friedmanTest.expectedIC.german,
+                            results.friedmanTest.expectedIC.spanish
+                        ],
+                        backgroundColor: [
+                            'rgba(74, 111, 165, 0.7)',
+                            'rgba(169, 169, 169, 0.7)',
+                            'rgba(220, 53, 69, 0.7)',
+                            'rgba(0, 123, 255, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(40, 167, 69, 0.7)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Index of Coincidence'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Frequency Chart
+            const freqCtx = document.getElementById('freqChart').getContext('2d');
+            const topChars = results.frequencyAnalysis.observed.slice(0, 10);
+            
+            new Chart(freqCtx, {
+                type: 'bar',
+                data: {
+                    labels: topChars.map(c => c.char),
+                    datasets: [
+                        {
+                            label: 'Observed Frequency',
+                            data: topChars.map(c => c.percent),
+                            backgroundColor: 'rgba(74, 111, 165, 0.7)'
+                        },
+                        {
+                            label: 'Expected Frequency',
+                            data: topChars.map(c => {
+                                const expected = results.frequencyAnalysis.expected.find(e => e.char === c.char);
+                                return expected ? expected.percent : 0;
+                            }),
+                            backgroundColor: 'rgba(220, 53, 69, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Percentage'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function showDetailedResults() {
+            if (!currentAnalysis) return;
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close" onclick="this.parentElement.parentElement.style.display='none'">&times;</span>
+                    <h2>Detailed Decryption Results</h2>
+                    <p>Showing all ${currentAnalysis.testResults.length} tested keys, sorted by score.</p>
+                    
+                    <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Key</th>
+                                    <th>Key Length</th>
+                                    <th>Score</th>
+                                    <th>Frequency</th>
+                                    <th>Common Words</th>
+                                    <th>Target Words</th>
+                                    <th>Decrypted Text</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${currentAnalysis.testResults.map((result, i) => `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        <td><strong>${result.key}</strong></td>
+                                        <td>${result.keyLength}</td>
+                                        <td>${result.score}</td>
+                                        <td>${result.scoreComponents.frequencyScore}</td>
+                                        <td>${result.scoreComponents.commonWordScore / 5}</td>
+                                        <td>${result.scoreComponents.targetWordScore / 20}</td>
+                                        <td><code>${result.decrypted.substring(0, 30)}${result.decrypted.length > 30 ? '...' : ''}</code></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Close modal when clicking outside
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+        
+        // Vigenère Tools functions
+        function processVigenere() {
+            const text = document.getElementById('vigenere-text').value;
+            const key = document.getElementById('vigenere-key').value;
+            const mode = document.getElementById('vigenere-mode').value;
+            const alphabetType = document.getElementById('vigenere-alphabet').value;
+            
+            let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (alphabetType === 'custom') {
+                alphabet = document.getElementById('custom-alphabet').value.toUpperCase();
+            }
+            
+            const analyzer = new K4Analyzer();
+            let result;
+            
+            try {
+                if (mode === 'encrypt') {
+                    result = analyzer.encrypt(text, key, alphabet);
+                } else {
+                    result = analyzer.decrypt(text, key, alphabet);
+                }
+                
+                document.getElementById('vigenere-output').innerHTML = `
+                    <div class="result-card">
+                        <h3>Vigenère ${mode === 'encrypt' ? 'Encryption' : 'Decryption'} Result</h3>
+                        <p><strong>Key:</strong> ${key}</p>
+                        <p><strong>Alphabet:</strong> ${alphabet}</p>
+                        <pre>${result}</pre>
+                        <button class="btn" onclick="copyToClipboard('${result.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-copy"></i> Copy to Clipboard
+                        </button>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('vigenere-output').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function testKeyVariations() {
+            const text = document.getElementById('vigenere-text').value;
+            const baseKey = document.getElementById('vigenere-key').value;
+            const alphabetType = document.getElementById('vigenere-alphabet').value;
+            const language = document.getElementById('language-profile').value;
+            
+            if (!baseKey) {
+                alert('Please enter a base key to test variations');
                 return;
             }
             
-            // Устанавливаем флаг анализа
-            isAnalyzing = true;
-            stopRequested = false;
-            document.getElementById('stopButton').disabled = false;
-            document.getElementById('status').innerHTML = 'Анализирую текст...';
+            let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (alphabetType === 'custom') {
+                alphabet = document.getElementById('custom-alphabet').value.toUpperCase();
+            }
             
-            // Запускаем в отдельном потоке, чтобы не блокировать интерфейс
-            setTimeout(() => {
-                try {
-                    const startTime = performance.now();
-                    
-                    // Очищаем текст (сохраняем оригинал для вывода)
-                    const originalText = ciphertext;
-                    ciphertext = prepareText(ciphertext, preserveCase, preserveSpaces);
-                    
-                    // Анализируем текст и показываем статистику
-                    analyzeTextStats(ciphertext);
-                    
-                    // В зависимости от выбранного метода запускаем анализ
-                    let resultsPromise;
-                    
-                    if (analysisMethod === 'bruteforce') {
-                        resultsPromise = bruteForceAnalysis(ciphertext, minKeyLength, maxKeyLength, maxResults, qualityThreshold);
-                    } else if (analysisMethod === 'known-length') {
-                        resultsPromise = analyzeKnownLength(ciphertext, maxKeyLength, maxResults);
-                    } else {
-                        resultsPromise = autoAnalysis(ciphertext, minKeyLength, maxKeyLength, maxResults, qualityThreshold);
+            const analyzer = new K4Analyzer();
+            const variations = generateKeyVariations(baseKey);
+            const results = [];
+            
+            // Show progress
+            const output = document.getElementById('vigenere-output');
+            output.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-spinner fa-spin"></i> Testing ${variations.length} key variations...
+                </div>
+            `;
+            
+            // Process in small chunks to keep UI responsive
+            let processed = 0;
+            const batchSize = 10;
+            
+            function processBatch() {
+                const batch = variations.slice(processed, processed + batchSize);
+                
+                for (const key of batch) {
+                    try {
+                        const decrypted = analyzer.decrypt(text, key, alphabet);
+                        const score = analyzer.scoreDecryption(decrypted, language);
+                        results.push({ key, decrypted, score: score.score });
+                    } catch (error) {
+                        console.error(`Error with key ${key}:`, error);
                     }
+                }
+                
+                processed += batchSize;
+                
+                // Update progress
+                output.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin"></i> Processed ${processed} of ${variations.length} key variations...
+                    </div>
+                `;
+                
+                if (processed < variations.length) {
+                    setTimeout(processBatch, 10);
+                } else {
+                    // Done processing
+                    displayKeyVariationResults(results);
+                }
+            }
+            
+            processBatch();
+        }
+        
+        function generateKeyVariations(baseKey) {
+            const variations = [baseKey];
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            
+            // Add uppercase/lowercase variations
+            variations.push(baseKey.toUpperCase());
+            variations.push(baseKey.toLowerCase());
+            
+            // Add common substitution variations
+            const commonSubstitutions = {
+                'A': ['4', '@'],
+                'B': ['8', '6'],
+                'E': ['3'],
+                'G': ['9', '6'],
+                'I': ['1', '!'],
+                'O': ['0'],
+                'S': ['5', '$'],
+                'T': ['7', '+']
+            };
+            
+            // Generate substitution variations
+            for (let i = 0; i < baseKey.length; i++) {
+                const char = baseKey[i].toUpperCase();
+                if (commonSubstitutions[char]) {
+                    for (const sub of commonSubstitutions[char]) {
+                        const variation = baseKey.substring(0, i) + sub + baseKey.substring(i + 1);
+                        variations.push(variation);
+                    }
+                }
+            }
+            
+            // Add common prefix/suffix variations
+            const commonPrefixes = ['THE', 'MY', 'OUR', 'SECRET', 'HIDDEN'];
+            const commonSuffixes = ['KEY', 'CODE', 'PASS', 'WORD', '123'];
+            
+            for (const prefix of commonPrefixes) {
+                variations.push(prefix + baseKey);
+            }
+            
+            for (const suffix of commonSuffixes) {
+                variations.push(baseKey + suffix);
+            }
+            
+            // Add some random mutations
+            for (let i = 0; i < 20; i++) {
+                let variation = '';
+                for (const char of baseKey) {
+                    if (Math.random() < 0.3) {
+                        variation += alphabet[Math.floor(Math.random() * alphabet.length)];
+                    } else {
+                        variation += char;
+                    }
+                }
+                variations.push(variation);
+            }
+            
+            return [...new Set(variations.filter(v => v.length > 0))];
+        }
+        
+        function displayKeyVariationResults(results) {
+            // Sort by score
+            results.sort((a, b) => b.score - a.score);
+            
+            const output = document.getElementById('vigenere-output');
+            output.innerHTML = `
+                <div class="result-card">
+                    <h3>Key Variation Test Results</h3>
+                    <p>Tested ${results.length} variations of the base key.</p>
                     
-                    resultsPromise.then(results => {
-                        if (stopRequested) return;
-                        
-                        const endTime = performance.now();
-                        
-                        // Выводим результаты
-                        if (results.length > 0) {
-                            const best = results[0];
-                            document.getElementById('status').innerHTML = `
-                                <span class="success">Анализ завершен за ${((endTime - startTime)/10000).toFixed(2)} сек. Проверено ${results.length} вариантов.</span>
-                            `;
-                            
-                            // Форматируем оригинальный текст с выделением ключа
-                            const formattedOriginal = formatOriginalText(originalText, best.key, preserveSpaces);
-                            
-                            document.getElementById('result').innerHTML = `
-                                <div class="key-candidate">
-                                    <p><strong>Лучший ключ:</strong> <span class="highlight">${best.key}</span> (длина: ${best.key.length})</p>
-                                    <p><strong>Оценка:</strong> ${best.score.toFixed(2)}</p>
-                                    <p><strong>Расшифрованный текст:</strong></p>
-                                    <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 10px; word-break: break-all;">
-                                        ${best.decrypted}
-                                    </div>
-                                    <p><strong>Исходный текст с ключом:</strong></p>
-                                    <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 10px; word-break: break-all; font-family: monospace;">
-                                        ${formattedOriginal}
-                                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Key</th>
+                                    <th>Score</th>
+                                    <th>Decrypted Text</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${results.slice(0, 20).map((result, i) => `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        <td><strong>${result.key}</strong></td>
+                                        <td>${result.score}</td>
+                                        <td><code>${result.decrypted.substring(0, 30)}${result.decrypted.length > 30 ? '...' : ''}</code></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function findLikelyKeyLength() {
+            const text = document.getElementById('vigenere-text').value;
+            const maxKeyLength = parseInt(document.getElementById('max-key-length').value) || 20;
+            
+            const analyzer = new K4Analyzer();
+            const kasiski = analyzer.kasiskiAnalysis(text, maxKeyLength);
+            const friedman = analyzer.friedmanTest(text);
+            
+            const likelyKeyLengths = [...new Set([
+                kasiski.likelyKeyLengths[0]?.length || 1,
+                kasiski.likelyKeyLengths[1]?.length || 1,
+                Math.round(1 / (friedman.kappaPlaintext || 1))
+            ].filter(l => l > 0 && l <= maxKeyLength))];
+            
+            document.getElementById('vigenere-output').innerHTML = `
+                <div class="result-card">
+                    <h3>Key Length Analysis</h3>
+                    <p><strong>Most likely key lengths:</strong> ${likelyKeyLengths.join(', ')}</p>
+                    
+                    <h4>Kasiski Examination Results</h4>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Key Length</th>
+                                    <th>Sequence Matches</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${kasiski.likelyKeyLengths.map(len => `
+                                    <tr>
+                                        <td>${len.length}</td>
+                                        <td>${len.count}</td>
+                                        <td>${(len.confidence * 100).toFixed(1)}%</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h4>Friedman Test Results</h4>
+                    <p><strong>Index of Coincidence:</strong> ${friedman.indexOfCoincidence.toFixed(4)}</p>
+                    <p><strong>Kappa Plaintext:</strong> ${friedman.kappaPlaintext.toFixed(4)}</p>
+                    <p><strong>Estimated key length:</strong> ${Math.round(1 / (friedman.kappaPlaintext || 1))}</p>
+                </div>
+            `;
+        }
+        
+        // Custom Alphabet functions
+        function updateFrequencyInputs() {
+            const chars = document.getElementById('alphabet-chars').value.toUpperCase();
+            const uniqueChars = [...new Set(chars.split('').filter(c => c.trim()))].sort();
+            
+            const container = document.getElementById('frequency-inputs');
+            container.innerHTML = '';
+            
+            for (const char of uniqueChars) {
+                const inputGroup = document.createElement('div');
+                inputGroup.style.marginBottom = '5px';
+                inputGroup.innerHTML = `
+                    <label style="display: inline-block; width: 30px;">${char}:</label>
+                    <input type="number" id="freq-${char}" min="0" max="100" step="0.01" 
+                           style="width: 80px; padding: 3px;"> %
+                `;
+                container.appendChild(inputGroup);
+            }
+        }
+        
+        function saveCustomAlphabet() {
+            const name = document.getElementById('alphabet-name').value.trim();
+            const chars = document.getElementById('alphabet-chars').value.toUpperCase();
+            
+            if (!name || !chars) {
+                alert('Please provide both a name and characters for the alphabet');
+                return;
+            }
+            
+            // Get frequencies
+            const uniqueChars = [...new Set(chars.split('').filter(c => c.trim()))];
+            const frequencies = {};
+            let total = 0;
+            
+            for (const char of uniqueChars) {
+                const freqInput = document.getElementById(`freq-${char}`);
+                if (freqInput) {
+                    const value = parseFloat(freqInput.value) || 0;
+                    frequencies[char] = value;
+                    total += value;
+                }
+            }
+            
+            // Normalize frequencies if they don't sum to 100%
+            if (total > 0 && Math.abs(total - 100) > 0.01) {
+                if (confirm(`Frequencies sum to ${total.toFixed(2)}%. Would you like to normalize them to 100%?`)) {
+                    for (const char in frequencies) {
+                        frequencies[char] = (frequencies[char] / total) * 100;
+                    }
+                }
+            }
+            
+            // Save alphabet
+            customAlphabets[name] = {
+                characters: chars,
+                frequencies: frequencies
+            };
+            
+            saveCustomAlphabets();
+            
+            document.getElementById('custom-alphabet-output').innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Alphabet "${name}" saved successfully!
+                </div>
+            `;
+        }
+        
+        function loadCustomAlphabet() {
+            const name = prompt('Enter the name of the alphabet to load:');
+            if (!name || !customAlphabets[name]) {
+                alert('Alphabet not found');
+                return;
+            }
+            
+            const alphabet = customAlphabets[name];
+            document.getElementById('alphabet-name').value = name;
+            document.getElementById('alphabet-chars').value = alphabet.characters;
+            
+            updateFrequencyInputs();
+            
+            // Set frequency values
+            for (const char in alphabet.frequencies) {
+                const freqInput = document.getElementById(`freq-${char}`);
+                if (freqInput) {
+                    freqInput.value = alphabet.frequencies[char].toFixed(2);
+                }
+            }
+            
+            document.getElementById('custom-alphabet-output').innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Alphabet "${name}" loaded successfully!
+                </div>
+            `;
+        }
+        
+        function testCustomAlphabet() {
+            const chars = document.getElementById('alphabet-chars').value.toUpperCase();
+            const uniqueChars = [...new Set(chars.split('').filter(c => c.trim()))];
+            
+            if (uniqueChars.length < 5) {
+                alert('Alphabet must contain at least 5 unique characters');
+                return;
+            }
+            
+            // Check frequencies if provided
+            let frequencies = {};
+            let totalFreq = 0;
+            let hasFrequencies = false;
+            
+            for (const char of uniqueChars) {
+                const freqInput = document.getElementById(`freq-${char}`);
+                if (freqInput && freqInput.value) {
+                    const value = parseFloat(freqInput.value);
+                    if (!isNaN(value)) {
+                        frequencies[char] = value;
+                        totalFreq += value;
+                        hasFrequencies = true;
+                    }
+                }
+            }
+            
+            // Generate test output
+            let output = `
+                <div class="result-card">
+                    <h3>Alphabet Test Results</h3>
+                    <p><strong>Characters:</strong> ${chars}</p>
+                    <p><strong>Unique characters:</strong> ${uniqueChars.length}</p>
+            `;
+            
+            if (hasFrequencies) {
+                output += `
+                    <p><strong>Total frequency:</strong> ${totalFreq.toFixed(2)}%</p>
+                    <div class="histogram">
+                        ${uniqueChars.map(char => {
+                            const freq = frequencies[char] || 0;
+                            const height = (freq / 100) * 200;
+                            return `
+                                <div class="histogram-bar" style="height: ${height}px" 
+                                     title="${char}: ${freq.toFixed(2)}%">
+                                    <div class="histogram-value">${freq.toFixed(1)}%</div>
+                                    <div class="histogram-label">${char}</div>
                                 </div>
                             `;
-                            
-                            // Показываем другие варианты
-                            if (results.length > 1) {
-                                let candidatesHTML = '<h4>Другие возможные ключи:</h4><div class="key-grid">';
-                                for (let i = 1; i < Math.min(maxResults, results.length); i++) {
-                                    const r = results[i];
-                                    candidatesHTML += `
-                                        <div class="key-candidate key-info" onclick="showKeyDetails('${r.key}')">
-                                            <p><strong>Ключ:</strong> ${r.key}</p>
-                                            <p><strong>Длина:</strong> ${r.key.length}</p>
-                                            <p><strong>Оценка:</strong> ${r.score.toFixed(2)}</p>
-                                            <p><strong>Текст:</strong> ${r.decrypted.substring(0, 30)}${r.decrypted.length > 30 ? '...' : ''}</p>
-                                        </div>
-                                    `;
-                                }
-                                candidatesHTML += '</div>';
-                                document.getElementById('candidates').innerHTML = candidatesHTML;
-                            }
-                        } else {
-                            document.getElementById('status').innerHTML = '<span class="error">Не удалось найти подходящий ключ</span>';
-                        }
-                        
-                        // Показываем анализ ключа для лучшего результата
-                        if (results.length > 0) {
-                            showKeyAnalysis(results[0].key, ciphertext);
-                        }
-                    }).catch(e => {
-                        if (!stopRequested) {
-                            document.getElementById('status').innerHTML = `<span class="error">Ошибка: ${e.message}</span>`;
-                            console.error(e);
-                        }
-                    }).finally(() => {
-                        isAnalyzing = false;
-                        document.getElementById('stopButton').disabled = true;
-                    });
-                    
-                } catch (e) {
-                    document.getElementById('status').innerHTML = `<span class="error">Ошибка: ${e.message}</span>`;
-                    console.error(e);
-                    isAnalyzing = false;
-                    document.getElementById('stopButton').disabled = true;
-                }
-            }, 100);
-        }
-        
-        // Остановка анализа
-        function stopAnalysis() {
-            if (isAnalyzing) {
-                stopRequested = true;
-                document.getElementById('status').innerHTML = '<span class="error">Анализ остановлен пользователем</span>';
-            }
-        }
-        
-        // Подготовка текста (очистка и приведение к верхнему регистру)
-        function prepareText(text, preserveCase, preserveSpaces) {
-            let result = text;
-            
-            if (!preserveCase) {
-                result = result.toUpperCase();
-            }
-            
-            if (!preserveSpaces) {
-                // Удаляем все, кроме букв
-                if (currentLanguage === 'english') {
-                    result = result.replace(/[^A-Za-z]/g, '');
-                } else {
-                    result = result.replace(/[^А-Яа-яЁё]/g, '');
-                }
-            }
-            
-            return result;
-        }
-        
-        // Форматирование оригинального текста с выделением ключа
-        function formatOriginalText(text, key, preserveSpaces) {
-            let result = '';
-            let keyPos = 0;
-            const keyLength = key.length;
-            
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                let isLetter = false;
-                
-                if (currentLanguage === 'english') {
-                    isLetter = /[A-Za-z]/.test(char);
-                } else {
-                    isLetter = /[А-Яа-яЁё]/.test(char);
-                }
-                
-                if (isLetter) {
-                    const keyChar = key[keyPos % keyLength];
-                    result += `<span class="highlight" title="Символ ключа: ${keyChar}">${char}</span>`;
-                    keyPos++;
-                } else if (preserveSpaces) {
-                    result += char;
-                }
-            }
-            
-            return result;
-        }
-        
-        // Автоматический анализ с определением длины ключа
-        function autoAnalysis(ciphertext, minKeyLength, maxKeyLength, maxResults, qualityThreshold) {
-            return new Promise((resolve) => {
-                const candidates = findKeyCandidates(ciphertext, minKeyLength, maxKeyLength);
-                
-                if (stopRequested) return resolve([]);
-                
-                // Расшифровываем с лучшими ключами и оцениваем
-                const results = [];
-                const totalKeys = candidates.length;
-                let processed = 0;
-                
-                for (const candidate of candidates) {
-                    if (stopRequested) return resolve([]);
-                    
-                    const decrypted = decryptVigenere(ciphertext, candidate.key);
-                    const score = evaluateDecryption(decrypted);
-                    
-                    if (score >= qualityThreshold * 100) {
-                        results.push({
-                            key: candidate.key,
-                            decrypted: decrypted,
-                            score: score,
-                            length: candidate.key.length
-                        });
-                    }
-                    
-                    processed++;
-                    updateProgress(processed / totalKeys * 100);
-                }
-                
-                // Сортируем по качеству
-                results.sort((a, b) => b.score - a.score);
-                
-                // Ограничиваем количество результатов
-                resolve(results.slice(0, maxResults));
-            });
-        }
-        
-        // Брутфорс всех возможных ключей заданной длины
-        function bruteForceAnalysis(ciphertext, minKeyLength, maxKeyLength, maxResults, qualityThreshold) {
-            return new Promise((resolve) => {
-                const results = [];
-                const totalKeys = calculateTotalKeys(minKeyLength, maxKeyLength);
-                let processed = 0;
-                
-                for (let len = minKeyLength; len <= maxKeyLength; len++) {
-                    if (stopRequested) return resolve([]);
-                    
-                    // Генерируем все возможные ключи данной длины
-                    const keys = generateAllKeys(len);
-                    
-                    for (const key of keys) {
-                        if (stopRequested) return resolve([]);
-                        
-                        const decrypted = decryptVigenere(ciphertext, key);
-                        const score = evaluateDecryption(decrypted);
-                        
-                        if (score >= qualityThreshold * 100) {
-                            results.push({
-                                key: key,
-                                decrypted: decrypted,
-                                score: score,
-                                length: key.length
-                            });
-                        }
-                        
-                        processed++;
-                        if (processed % 1000 === 0) {
-                            updateProgress(processed / totalKeys * 100);
-                        }
-                    }
-                }
-                
-                // Сортируем по качеству
-                results.sort((a, b) => b.score - a.score);
-                
-                // Ограничиваем количество результатов
-                resolve(results.slice(0, maxResults));
-            });
-        }
-        
-        // Анализ при известной длине ключа
-        function analyzeKnownLength(ciphertext, keyLength, maxResults) {
-            return new Promise((resolve) => {
-                const candidates = findKeyCandidates(ciphertext, keyLength, keyLength);
-                
-                if (stopRequested) return resolve([]);
-                
-                // Расшифровываем с лучшими ключами и оцениваем
-                const results = [];
-                
-                for (const candidate of candidates) {
-                    if (stopRequested) return resolve([]);
-                    
-                    const decrypted = decryptVigenere(ciphertext, candidate.key);
-                    const score = evaluateDecryption(decrypted);
-                    
-                    results.push({
-                        key: candidate.key,
-                        decrypted: decrypted,
-                        score: score,
-                        length: candidate.key.length
-                    });
-                }
-                
-                // Сортируем по качеству
-                results.sort((a, b) => b.score - a.score);
-                
-                // Ограничиваем количество результатов
-                resolve(results.slice(0, maxResults));
-            });
-        }
-        
-        // Поиск кандидатов на ключ с помощью частотного анализа
-        function findKeyCandidates(ciphertext, minKeyLength, maxKeyLength) {
-            const candidates = [];
-            
-            // Проверяем все возможные длины ключа
-            for (let keyLen = minKeyLength; keyLen <= maxKeyLength; keyLen++) {
-                if (stopRequested) return candidates;
-                
-                const groups = Array(keyLen).fill().map(() => []);
-                
-                // Разделяем текст на группы
-                for (let i = 0; i < ciphertext.length; i++) {
-                    groups[i % keyLen].push(ciphertext[i]);
-                }
-                
-                // Для каждой группы находим наиболее вероятный сдвиг
-                let key = '';
-                for (const group of groups) {
-                    const freqs = calculateFrequencies(group);
-                    const bestShift = findBestShift(freqs);
-                    key += String.fromCharCode(bestShift + (currentLanguage === 'english' ? 65 : 1040)); // A или А
-                }
-                
-                // Добавляем кандидата
-                candidates.push({
-                    key: key,
-                    length: keyLen
-                });
-                
-                updateProgress(keyLen / maxKeyLength * 50); // Первая половина прогресса
-            }
-            
-            return candidates;
-        }
-        
-        // Расчет общего количества ключей для брутфорса
-        function calculateTotalKeys(minKeyLength, maxKeyLength) {
-            let total = 0;
-            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
-            
-            for (let len = minKeyLength; len <= maxKeyLength; len++) {
-                total += Math.pow(alphabetSize, len);
-            }
-            
-            return total;
-        }
-        
-        // Генерация всех возможных ключей заданной длины
-        function generateAllKeys(length) {
-            const keys = [];
-            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
-            const firstCharCode = currentLanguage === 'english' ? 65 : 1040; // A или А
-            
-            // Рекурсивная функция для генерации ключей
-            function generate(current) {
-                if (current.length === length) {
-                    keys.push(current);
-                    return;
-                }
-                
-                for (let i = 0; i < alphabetSize; i++) {
-                    if (stopRequested) return;
-                    generate(current + String.fromCharCode(firstCharCode + i));
-                }
-            }
-            
-            generate('');
-            return keys;
-        }
-        
-        // Расчет частот символов в тексте
-        function calculateFrequencies(text) {
-            const freqs = {};
-            let total = 0;
-            
-            for (const c of text) {
-                const upperC = c.toUpperCase();
-                if ((currentLanguage === 'english' && /[A-Z]/.test(upperC)) || 
-                    (currentLanguage === 'russian' && /[А-ЯЁ]/.test(upperC))) {
-                    freqs[upperC] = (freqs[upperC] || 0) + 1;
-                    total++;
-                }
-            }
-            
-            // Преобразуем в проценты
-            for (const c in freqs) {
-                freqs[c] = (freqs[c] / total) * 100;
-            }
-            
-            return freqs;
-        }
-        
-        // Поиск наилучшего сдвига для группы символов
-        function findBestShift(freqs) {
-            let bestShift = 0;
-            let bestScore = -Infinity;
-            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
-            
-            // Проверяем все возможные сдвиги
-            for (let shift = 0; shift < alphabetSize; shift++) {
-                let score = 0;
-                
-                // Считаем оценку для каждого сдвига
-                for (const c in freqs) {
-                    let decryptedChar;
-                    if (currentLanguage === 'english') {
-                        decryptedChar = String.fromCharCode(
-                            ((c.charCodeAt(0) - 65 - shift + 26) % 26) + 65
-                        );
-                    } else {
-                        // Для русского языка учитываем Ё
-                        const code = c.charCodeAt(0);
-                        let index;
-                        
-                        if (code >= 1040 && code <= 1045) index = code - 1040;
-                        else if (code === 1025) index = 6; // Ё
-                        else if (code >= 1046 && code <= 1071) index = code - 1040 + 1; // +1 из-за Ё
-                        else continue;
-                        
-                        decryptedChar = String.fromCharCode(
-                            ((index - shift + alphabetSize) % alphabetSize) + 1040
-                        );
-                        
-                        // Корректировка для Ё
-                        if (decryptedChar === String.fromCharCode(1046)) decryptedChar = 'Ё';
-                    }
-                    
-                    score += (currentFrequencies.frequencies[decryptedChar] || 0) * freqs[c];
-                }
-                
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestShift = shift;
-                }
-            }
-            
-            return bestShift;
-        }
-        
-        // Дешифровка текста Виженера
-        function decryptVigenere(ciphertext, key) {
-            let decrypted = '';
-            const keyLen = key.length;
-            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
-            const firstCharCode = currentLanguage === 'english' ? 65 : 1040; // A или А
-            
-            for (let i = 0; i < ciphertext.length; i++) {
-                const cipherChar = ciphertext[i];
-                let upperC = cipherChar.toUpperCase();
-                
-                // Проверяем, является ли символ буквой нужного алфавита
-                if ((currentLanguage === 'english' && /[A-Z]/.test(upperC)) || 
-                    (currentLanguage === 'russian' && /[А-ЯЁ]/.test(upperC))) {
-                    
-                    // Получаем код символа с учетом языка
-                    let cipherCode, keyCode;
-                    
-                    if (currentLanguage === 'english') {
-                        cipherCode = upperC.charCodeAt(0) - 65;
-                        keyCode = key[i % keyLen].toUpperCase().charCodeAt(0) - 65;
-                    } else {
-                        // Для русского языка учитываем Ё
-                        cipherCode = upperC === 'Ё' ? 6 : 
-                                    (upperC.charCodeAt(0) >= 1046 ? upperC.charCodeAt(0) - 1040 + 1 : 
-                                    upperC.charCodeAt(0) - 1040);
-                                    
-                        const keyChar = key[i % keyLen].toUpperCase();
-                        keyCode = keyChar === 'Ё' ? 6 : 
-                                 (keyChar.charCodeAt(0) >= 1046 ? keyChar.charCodeAt(0) - 1040 + 1 : 
-                                 keyChar.charCodeAt(0) - 1040);
-                    }
-                    
-                    const decryptedCode = (cipherCode - keyCode + alphabetSize) % alphabetSize;
-                    let decryptedChar;
-                    
-                    if (currentLanguage === 'english') {
-                        decryptedChar = String.fromCharCode(decryptedCode + 65);
-                    } else {
-                        // Для русского обратная корректировка
-                        decryptedChar = decryptedCode === 6 ? 'Ё' : 
-                                       (decryptedCode >= 7 ? String.fromCharCode(decryptedCode + 1040 - 1) : 
-                                       String.fromCharCode(decryptedCode + 1040));
-                    }
-                    
-                    // Сохраняем регистр
-                    if (/[a-z]/.test(cipherChar) && document.getElementById('preserveCase').checked) {
-                        decrypted += decryptedChar.toLowerCase();
-                    } else {
-                        decrypted += decryptedChar;
-                    }
-                } else if (document.getElementById('preserveSpaces').checked) {
-                    // Сохраняем не-буквенные символы, если нужно
-                    decrypted += cipherChar;
-                }
-            }
-            
-            return decrypted;
-        }
-        
-        // Оценка качества расшифрованного текста
-        function evaluateDecryption(text) {
-            let score = 0;
-            
-            // 1. Частотность букв
-            const textFreq = calculateFrequencies(text);
-            for (const c in textFreq) {
-                score += (currentFrequencies.frequencies[c] || 0) * textFreq[c] / 100;
-            }
-            
-            // 2. Проверка биграмм
-            for (let i = 0; i < text.length - 1; i++) {
-                const bigram = text.substr(i, 2).toUpperCase();
-                if (currentFrequencies.commonBigrams.includes(bigram)) {
-                    score += 5;
-                }
-            }
-            
-            // 3. Проверка триграмм
-            for (let i = 0; i < text.length - 2; i++) {
-                const trigram = text.substr(i, 3).toUpperCase();
-                if (currentFrequencies.commonTrigrams.includes(trigram)) {
-                    score += 15;
-                }
-            }
-            
-            // 4. Проверка слов
-            for (const word of currentFrequencies.commonWords) {
-                const regex = new RegExp(word, 'gi');
-                const matches = text.match(regex);
-                if (matches) {
-                    score += 20 * word.length * matches.length;
-                }
-            }
-            
-            // 5. Штраф за редкие буквы
-            const rareLetters = currentLanguage === 'english' ? 
-                ['Z', 'Q', 'X', 'J', 'K'] : 
-                ['Ф', 'Ц', 'Щ', 'Э', 'Ъ'];
-                
-            for (const c of rareLetters) {
-                const regex = new RegExp(c, 'g');
-                const matches = text.toUpperCase().match(regex);
-                if (matches) {
-                    score -= 5 * matches.length;
-                }
-            }
-            
-            // 6. Бонус за пробелы (если они есть и выглядят осмысленно)
-            if (/\s/.test(text)) {
-                const words = text.split(/\s+/).filter(w => w.length > 0);
-                if (words.length > 3) {
-                    // Проверяем, есть ли среди слов частые слова
-                    let commonWordsCount = 0;
-                    for (const word of words) {
-                        if (currentFrequencies.commonWords.includes(word.toUpperCase())) {
-                            commonWordsCount++;
-                        }
-                    }
-                    
-                    if (commonWordsCount > 0) {
-                        score += 50 * commonWordsCount;
-                    }
-                }
-            }
-            
-            return score;
-        }
-        
-        // Обновление индикатора прогресса
-        function updateProgress(percent) {
-            const progressBar = document.getElementById('progressBar');
-            const rounded = Math.round(percent);
-            progressBar.style.width = `${rounded}%`;
-            progressBar.textContent = `${rounded}%`;
-        }
-        
-        // Анализ статистики текста
-        function analyzeTextStats(text) {
-            const statsDiv = document.getElementById('textStats');
-            const freqs = calculateFrequencies(text);
-            const totalLetters = Object.values(freqs).reduce((a, b) => a + b, 0) / 100;
-            
-            // Сортируем буквы по частоте
-            const sortedFreqs = Object.entries(freqs).sort((a, b) => b[1] - a[1]);
-            
-            let html = `
-                <p><strong>Общее количество букв:</strong> ${Math.round(totalLetters)}</p>
-                <h4>Частотность букв:</h4>
-                <table class="stats-table">
-                    <tr>
-                        <th>Буква</th>
-                        <th>Частота</th>
-                        <th>Ожидаемая</th>
-                        <th>Отклонение</th>
-                    </tr>
-            `;
-            
-            for (const [char, freq] of sortedFreqs) {
-                const expected = currentFrequencies.frequencies[char] || 0;
-                const deviation = freq - expected;
-                const deviationColor = deviation > 0 ? '#e74c3c' : '#27ae60';
-                
-                html += `
-                    <tr>
-                        <td>${char}</td>
-                        <td>${freq.toFixed(2)}%</td>
-                        <td>${expected.toFixed(2)}%</td>
-                        <td style="color: ${deviationColor}">${deviation > 0 ? '+' : ''}${deviation.toFixed(2)}%</td>
-                    </tr>
+                        }).join('')}
+                    </div>
                 `;
             }
             
-            html += `</table>`;
+            output += `</div>`;
             
-            // Анализ индекса совпадений
-            const ic = calculateIndexOfCoincidence(text);
-            const expectedIc = currentLanguage === 'english' ? 0.0667 : 0.0553;
+            document.getElementById('custom-alphabet-output').innerHTML = output;
+        }
+        
+        // Reports functions
+        function generateFullReport() {
+            if (!currentAnalysis) {
+                alert('No analysis results available to generate report');
+                return;
+            }
             
-            html += `
-                <div class="analysis-section">
-                    <h4>Индекс совпадений (IC):</h4>
-                    <p>Рассчитанный: ${ic.toFixed(5)}</p>
-                    <p>Ожидаемый для ${currentFrequencies.name}: ${expectedIc.toFixed(5)}</p>
-                    <p>Интерпретация: ${interpretIC(ic, expectedIc)}</p>
+            const report = `
+                <div class="result-card">
+                    <h3>Full Analysis Report</h3>
+                    <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+                    <p><strong>Input text:</strong> ${currentAnalysis.input.cleaned}</p>
+                    <p><strong>Input length:</strong> ${currentAnalysis.input.length} characters</p>
+                    <p><strong>Language profile:</strong> ${currentAnalysis.frequencyAnalysis.language}</p>
+                    
+                    <h4>Key Length Analysis</h4>
+                    <p><strong>Most likely key lengths:</strong> ${currentAnalysis.likelyKeyLengths.join(', ')}</p>
+                    
+                    <h4>Friedman Test</h4>
+                    <p><strong>Index of Coincidence:</strong> ${currentAnalysis.friedmanTest.indexOfCoincidence.toFixed(4)}</p>
+                    <p><strong>Interpretation:</strong> ${currentAnalysis.friedmanTest.interpretation}</p>
+                    
+                    <h4>Frequency Analysis</h4>
+                    <p><strong>Chi-squared statistic:</strong> ${currentAnalysis.frequencyAnalysis.chiSquared.toFixed(2)}</p>
+                    <p><strong>Interpretation:</strong> ${currentAnalysis.frequencyAnalysis.interpretation}</p>
+                    
+                    <h4>Top 10 Decryption Attempts</h4>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Key</th>
+                                    <th>Score</th>
+                                    <th>Decrypted Text</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${currentAnalysis.topResults.map((result, i) => `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        <td>${result.key}</td>
+                                        <td>${result.score}</td>
+                                        <td><code>${result.decrypted.substring(0, 50)}${result.decrypted.length > 50 ? '...' : ''}</code></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <button class="btn" onclick="printReport()">
+                        <i class="fas fa-print"></i> Print Report
+                    </button>
+                    <button class="btn btn-outline" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf"></i> Export to PDF
+                    </button>
                 </div>
             `;
             
-            statsDiv.innerHTML = html;
+            document.getElementById('report-output').innerHTML = report;
         }
         
-        // Расчет индекса совпадений
-        function calculateIndexOfCoincidence(text) {
-            const freqs = {};
-            let total = 0;
-            
-            for (const c of text) {
-                const upperC = c.toUpperCase();
-                if ((currentLanguage === 'english' && /[A-Z]/.test(upperC)) || 
-                    (currentLanguage === 'russian' && /[А-ЯЁ]/.test(upperC))) {
-                    freqs[upperC] = (freqs[upperC] || 0) + 1;
-                    total++;
-                }
+        function exportToCSV() {
+            if (!currentAnalysis) {
+                alert('No analysis results available to export');
+                return;
             }
             
-            if (total < 2) return 0;
+            let csv = "Rank,Key,Key Length,Score,Decrypted Text\n";
             
-            let sum = 0;
-            const alphabetSize = currentLanguage === 'english' ? 26 : 33;
-            
-            for (const c in freqs) {
-                sum += freqs[c] * (freqs[c] - 1);
-            }
-            
-            return sum / (total * (total - 1));
-        }
-        
-        // Интерпретация индекса совпадений
-        function interpretIC(ic, expectedIc) {
-            const ratio = ic / expectedIc;
-            
-            if (ratio > 0.9 && ratio < 1.1) {
-                return "Текст, вероятно, не зашифрован или зашифрован моноалфавитным шифром";
-            } else if (ic < 0.038) {
-                return "Возможно, полиалфавитное шифрование с длинным ключом";
-            } else {
-                return "Возможно, шифр Виженера или другой полиалфавитный шифр";
-            }
-        }
-        
-        // Показ деталей анализа для конкретного ключа
-        function showKeyDetails(key) {
-            const ciphertext = prepareText(
-                document.getElementById('ciphertext').value,
-                document.getElementById('preserveCase').checked,
-                document.getElementById('preserveSpaces').checked
-            );
-            
-            showKeyAnalysis(key, ciphertext);
-            switchTab('analysis');
-            
-            // Подсвечиваем выбранный ключ
-            document.querySelectorAll('.key-info').forEach(el => {
-                el.classList.remove('highlight');
+            currentAnalysis.testResults.forEach((result, i) => {
+                csv += `${i + 1},"${result.key}",${result.keyLength},${result.score},"${result.decrypted.replace(/"/g, '""')}"\n`;
             });
             
-            event.currentTarget.classList.add('highlight');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `k4-analysis-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
         
-        // Анализ ключа
-        function showKeyAnalysis(key, ciphertext) {
-            const keyAnalysisDiv = document.getElementById('keyAnalysis');
-            const decrypted = decryptVigenere(ciphertext, key);
-            const keyLength = key.length;
-            
-            // Разбиваем текст на группы по ключу
-            const groups = Array(keyLength).fill().map(() => []);
-            for (let i = 0; i < ciphertext.length; i++) {
-                groups[i % keyLength].push(ciphertext[i]);
+        function exportToJSON() {
+            if (!currentAnalysis) {
+                alert('No analysis results available to export');
+                return;
             }
             
-            let html = `
-                <div class="key-candidate">
-                    <p><strong>Анализ ключа:</strong> ${key} (длина: ${keyLength})</p>
-                    <p><strong>Расшифрованный текст:</strong> ${decrypted.substring(0, 100)}${decrypted.length > 100 ? '...' : ''}</p>
-                </div>
-                
-                <div class="analysis-section">
-                    <h4>Статистика по позициям ключа:</h4>
-                    <table class="stats-table">
-                        <tr>
-                            <th>Позиция</th>
-                            <th>Символ ключа</th>
-                            <th>Кол-во символов</th>
-                            <th>Топ-3 символа</th>
-                            <th>Предполагаемый сдвиг</th>
-                        </tr>
-            `;
+            const data = {
+                metadata: {
+                    date: new Date().toISOString(),
+                    inputLength: currentAnalysis.input.length,
+                    language: currentAnalysis.frequencyAnalysis.language
+                },
+                kasiskiAnalysis: currentAnalysis.kasiskiAnalysis,
+                friedmanTest: currentAnalysis.friedmanTest,
+                frequencyAnalysis: currentAnalysis.frequencyAnalysis,
+                topResults: currentAnalysis.topResults
+            };
             
-            for (let i = 0; i < keyLength; i++) {
-                const group = groups[i];
-                const freqs = calculateFrequencies(group);
-                const sortedFreqs = Object.entries(freqs).sort((a, b) => b[1] - a[1]);
-                
-                const topChars = sortedFreqs.slice(0, 3).map(([char, freq]) => 
-                    `${char}: ${freq.toFixed(1)}%`).join(', ');
-                
-                // Определяем предполагаемый сдвиг
-                const bestShift = findBestShift(freqs);
-                const shiftChar = String.fromCharCode(
-                    bestShift + (currentLanguage === 'english' ? 65 : 1040)
-                );
-                
-                html += `
-                    <tr>
-                        <td>${i + 1}</td>
-                        <td>${key[i]}</td>
-                        <td>${group.length}</td>
-                        <td>${topChars}</td>
-                        <td>${bestShift} (${shiftChar})</td>
-                    </tr>
-                `;
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `k4-analysis-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function printReport() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            alert('PDF export would be implemented with a library like jsPDF in a real application');
+        }
+        
+        // Utility functions
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+        
+        function clearResults() {
+            document.getElementById('output').innerHTML = '';
+            currentAnalysis = null;
+        }
+        
+        function saveAnalysis() {
+            if (!currentAnalysis) {
+                alert('No analysis results to save');
+                return;
             }
             
-            html += `
-                    </table>
-                </div>
-                
-                <div class="analysis-section">
-                    <h4>Проверка слов в расшифрованном тексте:</h4>
-            `;
+            // In a real app, this would save to a database or file
+            alert('Analysis saved (in a real app, this would persist the data)');
+        }
+        
+        function saveAnalysisHistory() {
+            localStorage.setItem('k4AnalysisHistory', JSON.stringify(analysisHistory));
+        }
+        
+        function saveCustomAlphabets() {
+            localStorage.setItem('k4CustomAlphabets', JSON.stringify(customAlphabets));
+        }
+        
+        function saveSettings() {
+            const settings = {
+                maxResults: document.getElementById('max-results').value,
+                autoSave: document.getElementById('auto-save').value,
+                theme: document.getElementById('theme').value,
+                fontSize: document.getElementById('font-size').value
+            };
             
-            // Ищем известные слова в расшифрованном тексте
-            const foundWords = [];
-            const upperDecrypted = decrypted.toUpperCase();
-            
-            for (const word of currentFrequencies.commonWords) {
-                if (upperDecrypted.includes(word)) {
-                    foundWords.push(word);
+            localStorage.setItem('k4Settings', JSON.stringify(settings));
+            closeModal('settingsModal');
+            alert('Settings saved');
+        }
+        
+        function loadSavedData() {
+            // Load analysis history
+            const savedHistory = localStorage.getItem('k4AnalysisHistory');
+            if (savedHistory) {
+                analysisHistory = JSON.parse(savedHistory);
+                if (analysisHistory.length > 0) {
+                    currentAnalysis = analysisHistory[analysisHistory.length - 1];
                 }
             }
             
-            if (foundWords.length > 0) {
-                html += `<p>Найдены слова: ${foundWords.join(', ')}</p>`;
-            } else {
-                html += `<p>Не найдено ни одного из ${currentFrequencies.commonWords.length} распространенных слов</p>`;
+            // Load custom alphabets
+            const savedAlphabets = localStorage.getItem('k4CustomAlphabets');
+            if (savedAlphabets) {
+                customAlphabets = JSON.parse(savedAlphabets);
             }
             
-            // Проверяем биграммы
-            const foundBigrams = [];
-            for (let i = 0; i < upperDecrypted.length - 1; i++) {
-                const bigram = upperDecrypted.substr(i, 2);
-                if (currentFrequencies.commonBigrams.includes(bigram) && !foundBigrams.includes(bigram)) {
-                    foundBigrams.push(bigram);
-                }
+            // Load settings
+            const savedSettings = localStorage.getItem('k4Settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('max-results').value = settings.maxResults;
+                document.getElementById('auto-save').value = settings.autoSave;
+                document.getElementById('theme').value = settings.theme;
+                document.getElementById('font-size').value = settings.fontSize;
+                
+                // Apply theme
+                applyTheme(settings.theme);
+                applyFontSize(settings.fontSize);
             }
-            
-            html += `<p>Найдены биграммы: ${foundBigrams.length > 0 ? foundBigrams.join(', ') : 'нет'}</p>`;
-            
-            html += `</div>`;
-            
-            keyAnalysisDiv.innerHTML = html;
         }
         
-        // Инициализация при загрузке
-        window.onload = function() {
-            updateKeyLength();
-            updateMinKeyLength();
-            updateQualityThreshold();
-        };
+        function applyTheme(theme) {
+            // In a real app, this would change CSS variables
+            console.log('Applying theme:', theme);
+        }
+        
+        function applyFontSize(size) {
+            let fontSize;
+            switch (size) {
+                case 'small': fontSize = '14px'; break;
+                case 'large': fontSize = '18px'; break;
+                default: fontSize = '16px';
+            }
+            
+            document.body.style.fontSize = fontSize;
+        }
     </script>
 </body>
 </html>
