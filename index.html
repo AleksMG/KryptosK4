@@ -857,59 +857,69 @@
             
             // Kasiski examination to find likely key length
             kasiskiAnalysis(text, maxKeyLength = 20) {
-    // 1. Ищем повторяющиеся триграммы (3-символьные последовательности)
-    const trigrams = {};
-    for (let i = 0; i < text.length - 2; i++) {
-        const trigram = text.substr(i, 3);
-        if (!trigrams[trigram]) trigrams[trigram] = [];
-        trigrams[trigram].push(i);
-    }
-
-    // 2. Оставляем только триграммы, встречающиеся ≥2 раз
-    const repeated = Object.entries(trigrams)
-        .filter(([_, positions]) => positions.length >= 2)
-        .map(([trigram, positions]) => ({
-            trigram,
-            positions,
-            distances: []
-        }));
-
-    // 3. Вычисляем расстояния между повторами
-    for (const seq of repeated) {
-        const pos = seq.positions;
-        for (let i = 1; i < pos.length; i++) {
-            seq.distances.push(pos[i] - pos[i - 1]);
-        }
-    }
-
-    // 4. Собираем все расстояния и их делители
-    const allDistances = repeated.flatMap(seq => seq.distances);
-    const factorCounts = {};
-
-    for (const dist of allDistances) {
-        for (let i = 2; i <= Math.min(dist, maxKeyLength); i++) {
-            if (dist % i === 0) factorCounts[i] = (factorCounts[i] || 0) + 1;
-        }
-    }
-
-    // 5. Выбираем 3 самых вероятных длины ключа
-    const likelyLengths = Object.entries(factorCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([len]) => parseInt(len));
-
-    // 6. Добавляем резервные варианты, если данных мало
-    if (likelyLengths.length === 0 || Math.max(...likelyLengths) > 10) {
-        likelyLengths.push(6, 8, 10); // Типичные длины ключей
-    }
-
-    return {
-        method: "Kasiski Examination",
-        likelyKeyLengths: [...new Set(likelyLengths)], // Убираем дубли
-        repeatedSequences: repeated,
-        allDistances
-    };
-}
+                // Find all repeated sequences of 3 or more characters
+                const sequences = {};
+                for (let len = 3; len <= 5; len++) {
+                    for (let i = 0; i <= text.length - len; i++) {
+                        const seq = text.substr(i, len);
+                        if (sequences[seq]) {
+                            sequences[seq].push(i);
+                        } else {
+                            sequences[seq] = [i];
+                        }
+                    }
+                }
+                
+                // Filter sequences that appear at least twice
+                const repeatedSequences = Object.entries(sequences)
+                    .filter(([seq, positions]) => positions.length > 1)
+                    .map(([seq, positions]) => ({
+                        sequence: seq,
+                        positions: positions,
+                        distances: []
+                    }));
+                
+                // Calculate distances between repeated sequences
+                for (const seq of repeatedSequences) {
+                    const positions = seq.positions;
+                    for (let i = 1; i < positions.length; i++) {
+                        seq.distances.push(positions[i] - positions[i - 1]);
+                    }
+                }
+                
+                // Find factors of distances
+                const factorCounts = {};
+                for (const seq of repeatedSequences) {
+                    for (const distance of seq.distances) {
+                        for (let i = 2; i <= Math.min(distance, maxKeyLength); i++) {
+                            if (distance % i === 0) {
+                                factorCounts[i] = (factorCounts[i] || 0) + 1;
+                            }
+                        }
+                    }
+                }
+                
+                // Find the most common factors
+                const sortedFactors = Object.entries(factorCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([factor, count]) => ({
+                        length: parseInt(factor),
+                        count: count,
+                        confidence: count / repeatedSequences.length
+                    }));
+                
+                return {
+                    method: "Kasiski Examination",
+                    likelyKeyLengths: sortedFactors.slice(0, 5),
+                    repeatedSequences: repeatedSequences,
+                    details: {
+                        totalRepeatedSequences: repeatedSequences.length,
+                        averageDistance: repeatedSequences.reduce((sum, seq) => 
+                            sum + seq.distances.reduce((s, d) => s + d, 0) / 
+                            seq.distances.length, 0) / repeatedSequences.length
+                    }
+                };
+            }
             
             // Friedman test to calculate index of coincidence
             friedmanTest(text, alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
